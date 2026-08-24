@@ -79,3 +79,13 @@ export interface Recomendacion extends CanonicalEntity {
   evidencia?: Evidencia;
   expiraEn?: ISODateTime;
 }
+
+/**
+ * Recomendación recién producida por un agente, ANTES de persistir. El agente no
+ * conoce su `id` ni el tenant ni los timestamps: los asigna el `CoreStore` al
+ * guardarla. Es lo que devuelve `AgentRunOutput`.
+ */
+export type RecomendacionNueva = Omit<
+  Recomendacion,
+  "id" | "tenantId" | "creadoEn" | "actualizadoEn"
+>;

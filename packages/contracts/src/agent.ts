@@ -2,7 +2,7 @@ import type { TenantCtx } from "./tenant.js";
 import type { AgentManifest } from "./manifest.js";
 import type { ProviderRegistry } from "./providers/registry.js";
 import type { CoreStore } from "./providers/core-store.js";
-import type { Recomendacion } from "./canonical/recomendacion.js";
+import type { RecomendacionNueva } from "./canonical/recomendacion.js";
 
 /**
  * Contexto que el engine arma y entrega a cada agente en su corrida. El agente lee
@@ -16,9 +16,9 @@ export interface AgentContext {
   config: Record<string, unknown>;
 }
 
-/** Salida de una corrida: recomendaciones (y, opcional, un resumen para UI/logs). */
+/** Salida de una corrida: recomendaciones nuevas (y, opcional, un resumen para UI/logs). */
 export interface AgentRunOutput {
-  recomendaciones: Recomendacion[];
+  recomendaciones: RecomendacionNueva[];
   resumen?: string;
 }
 

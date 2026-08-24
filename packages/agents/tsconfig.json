@@ -5,7 +5,9 @@
     "outDir": "./dist"
   },
   "include": ["src/**/*"],
+  "exclude": ["**/*.test.ts"],
   "references": [
-    { "path": "../contracts" }
+    { "path": "../contracts" },
+    { "path": "../agent-core" }
   ]
 }

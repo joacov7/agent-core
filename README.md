@@ -28,9 +28,16 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
   (**65 tests verdes** en vitest como red de paridad). El `engine` sigue siendo un
   stub: falla cerrado sin `TenantCtx` y delega en `agent.run`; falta wirear
   activación por manifest, enforcement, AI gateway y persistencia del bucle.
-- 🔜 `@agent-core/agents`: hoy un agente de ejemplo. El catálogo (incluyendo los
-  `.logic` de crm/oportunidades/whatsapp/rentabilidad, detrás del modelo de
-  cadencia) llega después.
+- ✅ `@agent-core/agents`: catálogo con 5 agentes. Los `.logic` de
+  crm/oportunidades/whatsapp/rentabilidad portados con sus tests, envueltos en el
+  contrato `Agent` con manifests completos (capacidades + cadencia). `whatsapp`
+  tiene `run()` funcional (lee `interactions`, clasifica, prioriza con el core);
+  crm/oportunidades/rentabilidad tienen la lógica lista y el `run()` pendiente de
+  una capa de agregación en los providers.
+- ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
+  capacidades ⊇ requeridas + modelo de negocio compatible.
+
+**108 tests verdes** (vitest) como red de paridad.
 
 ## Principios
 
