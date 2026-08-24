@@ -1,12 +1,3 @@
-import type { CoreStore, TenantCtx, ResultadoAccion } from "@agent-core/contracts";
-
-/**
- * Resultados (motor). STUB.
- * Migra `resultados.logic.ts` (clasificación y métricas), separando SIEMPRE el
- * valor REAL medido del estimado. Enlaza el bucle Acción → Resultado → Impacto.
- */
-export function registrarResultado(
-  store: CoreStore, ctx: TenantCtx, resultado: ResultadoAccion,
-): Promise<ResultadoAccion> {
-  return store.actionResults.save(ctx, resultado);
-}
+// Resultados (motor): clasificación (positivo/negativo) y agregación de métricas,
+// separando el valor REAL medido del estimado. Portado de Regionales.
+export * from "./resultados.logic.js";

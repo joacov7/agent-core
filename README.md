@@ -23,10 +23,14 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
 ## Estado
 
 - ✅ Scaffold del monorepo + `@agent-core/contracts` completo.
-- 🔜 `@agent-core/core`: hoy son stubs con la estructura de módulos; se completan
-  portando los `.logic` puros de Regionales (recommendations, policies,
-  jefe-gabinete, resultados, memoria) casi tal cual.
-- 🔜 `@agent-core/agents`: hoy un agente de ejemplo; el catálogo completo llega después.
+- ✅ `@agent-core/core`: `.logic` puros de Regionales portados casi tal cual
+  (recommendations, policies, jefe-gabinete, resultados, memoria) con sus tests
+  (**65 tests verdes** en vitest como red de paridad). El `engine` sigue siendo un
+  stub: falla cerrado sin `TenantCtx` y delega en `agent.run`; falta wirear
+  activación por manifest, enforcement, AI gateway y persistencia del bucle.
+- 🔜 `@agent-core/agents`: hoy un agente de ejemplo. El catálogo (incluyendo los
+  `.logic` de crm/oportunidades/whatsapp/rentabilidad, detrás del modelo de
+  cadencia) llega después.
 
 ## Principios
 
@@ -43,4 +47,5 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
 npm install
 npm run build       # tsc --build de todos los paquetes (project references)
 npm run typecheck   # build --dry
+npm test            # vitest run (unit tests puros de los .logic)
 ```
