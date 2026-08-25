@@ -40,3 +40,12 @@ export interface EntradaMemoria extends CanonicalEntity {
   agentId?: string;
   expiraEn?: ISODateTime | null;
 }
+
+/**
+ * Entrada de memoria recién producida, ANTES de persistir. El `CoreStore` asigna
+ * `id`/`tenantId`/timestamps al guardarla. Simétrico a `RecomendacionNueva`.
+ */
+export type EntradaMemoriaNueva = Omit<
+  EntradaMemoria,
+  "id" | "tenantId" | "creadoEn" | "actualizadoEn"
+>;

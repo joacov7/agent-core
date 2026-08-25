@@ -24,10 +24,17 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
 
 - ✅ Scaffold del monorepo + `@agent-core/contracts` completo.
 - ✅ `@agent-core/core`: `.logic` puros de Regionales portados casi tal cual
-  (recommendations, policies, jefe-gabinete, resultados, memoria) con sus tests
-  (**65 tests verdes** en vitest como red de paridad). El `engine` sigue siendo un
-  stub: falla cerrado sin `TenantCtx` y delega en `agent.run`; falta wirear
-  activación por manifest, enforcement, AI gateway y persistencia del bucle.
+  (recommendations, policies, jefe-gabinete, resultados, memoria) como red de
+  paridad. **Engine funcional**:
+  - `runAgent`: falla cerrado sin `TenantCtx`, activa por manifest (capacidades
+    derivadas de los providers + modelo de negocio) y persiste las recomendaciones.
+  - `evaluarEscritura`: enforcement que intercepta toda tool de escritura
+    (bloqueo por memoria + policies: límites, horarios, entidades protegidas, precio, autonomía).
+  - `ejecutarAccion`: paso Acción → Resultado, con el gate del enforcement y
+    persistencia del `ResultadoAccion`.
+  - `registrarDecision`: write de memoria que el enforcement después lee.
+  - Pendiente en el engine: AI gateway con presupuesto/atribución y persistencia
+    de Impacto (falta su store en el contrato).
 - ✅ `@agent-core/agents`: catálogo con 5 agentes. Los `.logic` de
   crm/oportunidades/whatsapp/rentabilidad portados con sus tests, envueltos en el
   contrato `Agent` con manifests completos (capacidades + cadencia). `whatsapp`
@@ -37,7 +44,8 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 
-**108 tests verdes** (vitest) como red de paridad.
+**121 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+enforcement, ejecución, memoria).
 
 ## Principios
 
