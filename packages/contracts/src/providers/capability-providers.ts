@@ -13,6 +13,9 @@ import type {
   Transaccion, Cobro, Oportunidad, Evento, Documento,
   CatalogoItem, Existencia, EvidenciaMercado, Compra,
 } from "../canonical/opcionales.js";
+import type {
+  ResumenContacto, ParComplementario, CanastaContacto, ResumenItem,
+} from "../canonical/agregados.js";
 
 /* ── contacts ─────────────────────────────────────────────────────────────── */
 /** Capacidad `contacts`: base de contactos + historial. */
@@ -33,6 +36,15 @@ export interface InteractionsProvider {
 export interface TransactionsProvider {
   byContact(ctx: TenantCtx, contactoId: ID, query?: ListQuery): Promise<Page<Transaccion>>;
   recent(ctx: TenantCtx, query?: ListQuery): Promise<Page<Transaccion>>;
+
+  // ── Agregados analíticos (OPCIONALES). La app los implementa si puede darlos
+  //    eficientemente; los consumen CRM y Venta cruzada. ────────────────────────
+  /** Resumen transaccional por contacto (compras, valor, recencia, frecuencia). CRM. */
+  resumenPorContacto?(ctx: TenantCtx, query?: ListQuery): Promise<Page<ResumenContacto>>;
+  /** Pares de ítems comprados juntos (co-ocurrencia de canasta). Venta cruzada. */
+  paresComplementarios?(ctx: TenantCtx, query?: ListQuery): Promise<ParComplementario[]>;
+  /** Ítems adquiridos por cada contacto. Venta cruzada. */
+  canastasPorContacto?(ctx: TenantCtx, query?: ListQuery): Promise<Page<CanastaContacto>>;
 }
 
 /* ── receivables ──────────────────────────────────────────────────────────── */
@@ -45,6 +57,13 @@ export interface ReceivablesProvider {
 export interface CatalogProvider {
   items(ctx: TenantCtx, query?: ListQuery): Promise<Page<CatalogoItem>>;
   get(ctx: TenantCtx, id: ID): Promise<CatalogoItem | null>;
+
+  /**
+   * Agregado analítico (OPCIONAL): resumen de rentabilidad por ítem (precio, costo,
+   * margen, ventas 30d, stock, inmovilizado). Lo arma el adaptador uniendo
+   * catálogo + transacciones + inventario. Lo consume el agente Rentabilidad.
+   */
+  resumenRentabilidad?(ctx: TenantCtx, query?: ListQuery): Promise<Page<ResumenItem>>;
 }
 
 /* ── inventory ────────────────────────────────────────────────────────────── */

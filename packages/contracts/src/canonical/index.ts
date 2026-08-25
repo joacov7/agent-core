@@ -7,4 +7,5 @@ export type * from "./recomendacion.js";
 export type * from "./ciclo.js";
 export type * from "./memoria.js";
 export type * from "./gasto.js";
+export type * from "./agregados.js";
 export type * from "./opcionales.js";

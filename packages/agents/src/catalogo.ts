@@ -10,10 +10,12 @@ import { agenteRentabilidad } from "./agentes/rentabilidad/index.js";
  * la app cubre su `manifest.requiereCapacidades` y su modelo de negocio (ver
  * `esActivable` / `manifestsActivables` en @agent-core/core).
  *
- * Estado de wiring:
- *   - tareas, whatsapp → run() funcional (whatsapp lee `interactions` y clasifica).
- *   - crm, oportunidades, rentabilidad → lógica portada y testeada; run() pendiente
- *     de una capa de agregación en los providers (ver el TODO de cada uno).
+ * Estado de wiring: todos con run() funcional.
+ *   - whatsapp → lee `interactions` y clasifica.
+ *   - crm / oportunidades / rentabilidad → consumen los agregados analíticos
+ *     opcionales de los providers (resumenPorContacto, paresComplementarios /
+ *     canastasPorContacto, resumenRentabilidad). Si el adaptador no los expone,
+ *     devuelven vacío con una nota.
  */
 export const catalogo: Agent[] = [
   agenteTareas,

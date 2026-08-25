@@ -1,4 +1,10 @@
-import type { Agent, AgentContext, AgentManifest, AgentRunOutput } from "@agent-core/contracts";
+import type {
+  Agent, AgentContext, AgentManifest, AgentRunOutput, RecomendacionNueva,
+} from "@agent-core/contracts";
+import { calcularPrioridad } from "@agent-core/core";
+import {
+  detectarVentaCruzada, type ParComplementario, type ClienteProductos,
+} from "./oportunidades.logic.js";
 
 export * from "./oportunidades.logic.js";
 
@@ -26,11 +32,41 @@ export const manifestOportunidades: AgentManifest = {
 
 export const agenteOportunidades: Agent = {
   manifest: manifestOportunidades,
-  async run(_context: AgentContext): Promise<AgentRunOutput> {
-    // TODO(wiring): detectarVentaCruzada necesita los pares complementarios (canasta:
-    // co-ocurrencia de ítems) y los productos por cliente (ClienteProductos), que se
-    // derivan de las líneas de las transacciones. Falta esa agregación en los providers.
-    // La lógica está portada y testeada.
-    return { recomendaciones: [] };
+  async run({ ctx, providers }: AgentContext): Promise<AgentRunOutput> {
+    const tx = providers.transactions;
+    if (!tx?.paresComplementarios || !tx?.canastasPorContacto) {
+      return { recomendaciones: [], resumen: "El adaptador no expone paresComplementarios/canastasPorContacto." };
+    }
+
+    const [pares, canastas] = await Promise.all([
+      tx.paresComplementarios(ctx),
+      tx.canastasPorContacto(ctx),
+    ]);
+
+    // Mapeo canónico → shapes de la lógica. Usamos el contactoId como clave estable
+    // (la lógica solo lo trata como identificador), para poder trazar la recomendación.
+    const paresLogic: ParComplementario[] = pares.map((p) => ({
+      a: p.itemA, b: p.itemB, nombre_a: p.nombreA ?? null, nombre_b: p.nombreB ?? null, co: p.coOcurrencias,
+    }));
+    const clientes: ClienteProductos[] = canastas.items.map((c) => ({
+      email: c.contactoId, nombre: c.nombre ?? c.contactoId, productos: c.itemIds,
+    }));
+
+    const oportunidades = detectarVentaCruzada(paresLogic, clientes);
+    const recomendaciones: RecomendacionNueva[] = oportunidades.map((o) => ({
+      agentId: manifestOportunidades.id,
+      tipo: "venta_cruzada",
+      titulo: `Ofrecer ${o.sugerido_nombre ?? o.sugerido} (compró ${o.tiene})`,
+      descripcion: `Complementario frecuente (${o.co} co-ocurrencias).`,
+      estado: "proposed",
+      severidad: "oportunidad",
+      confianza: o.confianza,
+      prioridad: calcularPrioridad({ severidad: "oportunidad", confianza: o.confianza, valorEsperado: null }),
+      refEntidad: { tipo: "contacto", id: o.email },
+      dedupKey: `oportunidades:venta_cruzada:contacto:${o.email}:${o.sugerido}`,
+      evidencia: { observado: { tiene: o.tiene, sugerido: o.sugerido, coOcurrencias: o.co } },
+    }));
+
+    return { recomendaciones, resumen: `${recomendaciones.length} oportunidad(es) de venta cruzada.` };
   },
 };

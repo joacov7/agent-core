@@ -38,17 +38,18 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 5 agentes. Los `.logic` de
-  crm/oportunidades/whatsapp/rentabilidad portados con sus tests, envueltos en el
-  contrato `Agent` con manifests completos (capacidades + cadencia). `whatsapp`
-  tiene `run()` funcional (lee `interactions`, clasifica, prioriza con el core);
-  crm/oportunidades/rentabilidad tienen la lógica lista y el `run()` pendiente de
-  una capa de agregación en los providers.
+- ✅ `@agent-core/agents`: catálogo con 5 agentes, **todos con `run()` funcional**.
+  `.logic` de crm/oportunidades/whatsapp/rentabilidad portados con sus tests,
+  envueltos en el contrato `Agent` con manifests completos (capacidades + cadencia).
+  crm/oportunidades/rentabilidad consumen los **agregados analíticos** de los
+  providers (`resumenPorContacto`, `paresComplementarios`/`canastasPorContacto`,
+  `resumenRentabilidad`), métodos opcionales que el adaptador implementa si puede darlos.
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 
-**130 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
-enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución).
+**136 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
+wiring de los agentes contra los agregados de los providers.
 
 ## Principios
 
