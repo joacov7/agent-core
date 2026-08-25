@@ -6,4 +6,5 @@ export type * from "./tarea.js";
 export type * from "./recomendacion.js";
 export type * from "./ciclo.js";
 export type * from "./memoria.js";
+export type * from "./gasto.js";
 export type * from "./opcionales.js";

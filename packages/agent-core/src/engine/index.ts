@@ -10,6 +10,7 @@ export * from "./capacidades.js";
 export * from "./enforcement.js";
 export * from "./ejecucion.js";
 export * from "./memoria-store.js";
+export * from "./impacto.js";
 export { relojPorDefecto, generarIdPorDefecto } from "./ids.js";
 export type { Reloj, GenerarId } from "./ids.js";
 

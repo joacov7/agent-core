@@ -33,8 +33,11 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
   - `ejecutarAccion`: paso Acción → Resultado, con el gate del enforcement y
     persistencia del `ResultadoAccion`.
   - `registrarDecision`: write de memoria que el enforcement después lee.
-  - Pendiente en el engine: AI gateway con presupuesto/atribución y persistencia
-    de Impacto (falta su store en el contrato).
+  - `registrarImpacto`: paso Resultado → Impacto, persistido en `ImpactStore`.
+  - AI Gateway (`crearAiGateway`): envuelve al `AiCompletionProvider` con
+    presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
+    de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
+    proveedor concreto.
 - ✅ `@agent-core/agents`: catálogo con 5 agentes. Los `.logic` de
   crm/oportunidades/whatsapp/rentabilidad portados con sus tests, envueltos en el
   contrato `Agent` con manifests completos (capacidades + cadencia). `whatsapp`
@@ -44,8 +47,8 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 
-**121 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
-enforcement, ejecución, memoria).
+**130 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución).
 
 ## Principios
 

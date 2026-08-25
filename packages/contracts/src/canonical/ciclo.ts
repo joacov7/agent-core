@@ -43,3 +43,12 @@ export interface Impacto extends CanonicalEntity {
   unidad?: string;
   medidoEn: ISODateTime;
 }
+
+/**
+ * Impacto recién medido, antes de que el `ImpactStore` le asigne id/tenant/creado.
+ * `medidoEn` es opcional acá: si falta, el Core usa el reloj al registrar.
+ */
+export type ImpactoNuevo = Omit<
+  Impacto,
+  "id" | "tenantId" | "creadoEn" | "actualizadoEn" | "medidoEn"
+> & { medidoEn?: ISODateTime };

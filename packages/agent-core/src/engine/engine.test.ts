@@ -1,23 +1,26 @@
 import { describe, it, expect } from "vitest";
 import type {
-  Agent, AgentManifest, CoreStore, EntradaMemoria, RecomendacionNueva,
+  Agent, AgentManifest, CoreStore, EntradaMemoria, Impacto, RecomendacionNueva,
   ResultadoAccion, Recomendacion, TenantCtx, WriteToolHandler,
 } from "@agent-core/contracts";
 import {
-  runAgent, AgenteNoActivableError, evaluarEscritura, ejecutarAccion, registrarDecision,
+  runAgent, AgenteNoActivableError, evaluarEscritura, ejecutarAccion,
+  registrarDecision, registrarImpacto,
 } from "./index.js";
 
 // ─── Fakes en memoria ─────────────────────────────────────────────────────────
 type StoreFake = CoreStore & {
   _recos: Recomendacion[]; _results: ResultadoAccion[]; _mem: EntradaMemoria[];
+  _impacts: Impacto[];
 };
 
 function crearStore(): StoreFake {
   const recos: Recomendacion[] = [];
   const results: ResultadoAccion[] = [];
   const mem: EntradaMemoria[] = [];
+  const impacts: Impacto[] = [];
   return {
-    _recos: recos, _results: results, _mem: mem,
+    _recos: recos, _results: results, _mem: mem, _impacts: impacts,
     recommendations: {
       async save(_ctx, r) { recos.push(r); return r; },
       async get(_ctx, id) { return recos.find((x) => x.id === id) ?? null; },
@@ -26,6 +29,11 @@ function crearStore(): StoreFake {
     actionResults: {
       async save(_ctx, r) { results.push(r); return r; },
       async list() { return { items: results }; },
+    },
+    impacts: {
+      async save(_ctx, i) { impacts.push(i); return i; },
+      async list() { return { items: impacts }; },
+      async byRecomendacion(_ctx, recomendacionId) { return impacts.filter((i) => i.recomendacionId === recomendacionId); },
     },
     memory: {
       async put(_ctx, e) { mem.push(e); return e; },
@@ -183,6 +191,21 @@ describe("ejecutarAccion", () => {
     });
     expect(r.estado).toBe("fallida");
     expect(store._results[0]).toMatchObject({ ok: false, tipo: "error", error: "boom" });
+  });
+});
+
+// ─── impacto (Resultado → Impacto) ────────────────────────────────────────────
+describe("registrarImpacto", () => {
+  it("persiste el impacto con id/tenant y default de medidoEn", async () => {
+    const store = crearStore();
+    const imp = await registrarImpacto(store, ctx, {
+      recomendacionId: "rec-1", metrica: "ingreso", valor: 12500,
+    }, deterministas);
+    expect(imp).toMatchObject({
+      id: "id-1", tenantId: "t1", medidoEn: "2026-01-01T00:00:00.000Z", valor: 12500,
+    });
+    const porReco = await store.impacts.byRecomendacion(ctx, "rec-1");
+    expect(porReco).toHaveLength(1);
   });
 });
 
