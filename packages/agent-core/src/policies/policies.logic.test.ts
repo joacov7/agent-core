@@ -63,14 +63,30 @@ describe("evaluar — habilitación y autonomía", () => {
 });
 
 describe("evaluar — entidades protegidas", () => {
-  it("producto protegido bloquea", () => {
-    const r = evaluar(ctx({ toolInput: { productId: "P1", precio: 100 }, global: { protected_products: ["P1"] } }));
+  it("una entidad afectada que está protegida bloquea", () => {
+    const r = evaluar(ctx({
+      toolInput: { precio: 100 },
+      entidadesAfectadas: [{ tipo: "catalogo_item", id: "P1" }],
+      global: { protectedEntities: [{ tipo: "catalogo_item", id: "P1" }] },
+    }));
     expect(r.allow).toBe(false);
-    expect(r.motivo).toContain("protegido");
+    expect(r.motivo).toContain("protegida");
   });
-  it("cliente protegido bloquea (enviar_whatsapp)", () => {
-    const r = evaluar(ctx({ tool: "enviar_whatsapp", toolInput: { to: "549111" }, global: { protected_clients: ["549111"] } }));
+  it("otra entidad protegida (contacto) también bloquea", () => {
+    const r = evaluar(ctx({
+      tool: "enviar_whatsapp",
+      entidadesAfectadas: [{ tipo: "contacto", id: "c1" }],
+      global: { protectedEntities: [{ tipo: "contacto", id: "c1" }] },
+    }));
     expect(r.allow).toBe(false);
+  });
+  it("entidad no protegida no bloquea", () => {
+    const r = evaluar(ctx({
+      agentAutonomy: "autonomous",
+      entidadesAfectadas: [{ tipo: "catalogo_item", id: "P2" }],
+      global: { protectedEntities: [{ tipo: "catalogo_item", id: "P1" }] },
+    }));
+    expect(r.allow).toBe(true);
   });
 });
 

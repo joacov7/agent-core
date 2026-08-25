@@ -12,11 +12,12 @@
 // Nunca se confía en el frontend. Por defecto (sin config) no bloquea nada:
 // el comportamiento actual del sistema se mantiene intacto.
 //
-// PENDIENTE (sección 9 del documento): generalizar `protected_products` /
-// `protected_clients` a `protectedEntities: EntityRef[]`. Se deja tal cual por
-// ahora para preservar paridad con los tests; el rename es un follow-up acotado.
+// Entidades protegidas: genéricas `{ tipo, id }[]` (sección 9 del documento). El
+// caller declara qué entidades toca la acción (`entidadesAfectadas`) y el Core las
+// contrasta contra `protectedEntities`, sin asumir producto/cliente ni sniffear el
+// toolInput por nombres de rubro.
 
-import type { AutonomyMode } from "@agent-core/contracts";
+import type { AutonomyMode, EntityRef } from "@agent-core/contracts";
 
 export interface ToolPolicy {
   allowed?: boolean;
@@ -34,8 +35,8 @@ export interface GlobalPolicy {
   max_price_increase_pct?: number | null;
   max_whatsapp_daily?: number | null;
   max_price_changes_daily?: number | null;
-  protected_products?: string[];
-  protected_clients?: string[];
+  /** Entidades que no pueden ser tocadas por acciones automáticas. Genérico {tipo,id}. */
+  protectedEntities?: EntityRef[];
   whatsapp_allowed_hours?: { from: number; to: number } | null;
 }
 
@@ -64,6 +65,9 @@ export interface EvalContext {
   global: GlobalPolicy;
   agentAutonomy: AutonomyMode;
   toolInput: any;
+  /** Entidades que la acción va a tocar (el caller las resuelve). Se contrastan
+   *  contra `protectedEntities`. */
+  entidadesAfectadas?: EntityRef[];
   hora: number;              // 0..23
   ejecutadasEnRun: number;   // veces que ya corrió esta tool en la ejecución
   ejecutadasHoy: number;     // acciones ejecutadas hoy (world-facing) de esta tool
@@ -92,14 +96,15 @@ export function evaluar(c: EvalContext): EvalResult {
     return { allow: false, requireApproval: true, motivo: "herramienta deshabilitada por política" };
   }
 
-  // 2. Entidades protegidas.
-  const productId = inp?.productId != null ? String(inp.productId) : null;
-  if (productId && (g.protected_products ?? []).includes(productId)) {
-    return { allow: false, requireApproval: true, motivo: `producto protegido (${productId})` };
-  }
-  const cliente = inp?.clientId != null ? String(inp.clientId) : (inp?.to != null ? String(inp.to) : null);
-  if (cliente && (g.protected_clients ?? []).includes(cliente)) {
-    return { allow: false, requireApproval: true, motivo: `cliente protegido (${cliente})` };
+  // 2. Entidades protegidas (genérico {tipo,id}; el caller declara las afectadas).
+  const protegidas = g.protectedEntities ?? [];
+  if (protegidas.length && c.entidadesAfectadas?.length) {
+    const hit = c.entidadesAfectadas.find(
+      (e) => protegidas.some((p) => p.tipo === e.tipo && p.id === e.id),
+    );
+    if (hit) {
+      return { allow: false, requireApproval: true, motivo: `entidad protegida (${hit.tipo}:${hit.id})` };
+    }
   }
 
   // 3. Horario permitido (WhatsApp).

@@ -125,8 +125,10 @@ describe("evaluarEscritura", () => {
 
   it("bloquea una entidad protegida", () => {
     const d = evaluarEscritura({
-      agentId: "a", tool: "aplicar_precio", toolInput: { productId: "P1" },
-      agentAutonomy: "autonomous", policies: { global: { protected_products: ["P1"] } },
+      agentId: "a", tool: "aplicar_precio", toolInput: {},
+      entidadesAfectadas: [{ tipo: "catalogo_item", id: "P1" }],
+      agentAutonomy: "autonomous",
+      policies: { global: { protectedEntities: [{ tipo: "catalogo_item", id: "P1" }] } },
     });
     expect(d.permitido).toBe(false);
   });

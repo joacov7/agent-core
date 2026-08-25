@@ -56,7 +56,7 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**143 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**144 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
 wiring de los agentes contra los agregados + smoke end-to-end del adapter de referencia.
 
@@ -68,6 +68,20 @@ wiring de los agentes contra los agregados + smoke end-to-end del adapter de ref
   Prisma ni servicios del dominio.
 - **Auto-descubrible:** las capacidades disponibles se derivan de qué providers existen.
 - **Contracts sin lógica:** solo tipos; cambia poco y lo importan todos.
+
+## Decisiones de diseño (cerradas)
+
+- **Entidades protegidas genéricas.** Las policies protegen `EntityRef` (`{ tipo, id }[]`
+  en `GlobalPolicy.protectedEntities`), no `protected_products`/`protected_clients`. El
+  caller declara las `entidadesAfectadas` por una acción y el enforcement las contrasta.
+  Sin supuesto de rubro en el Core (sección 9 del documento).
+- **Naming: camelCase en la superficie pública, snake_case interno en los `.logic`.**
+  Todo `@agent-core/contracts` (el contrato que ven las apps) es camelCase canónico.
+  Los módulos `.logic` portados de Regionales conservan sus DTOs snake_case
+  (`RecoJefe`, `DecisionValue`, `MetricasCliente`, `RentabilidadItem`, …): son la red
+  de paridad y renombrarlos sería churn cosmético sin valor. El mapeo canónico → DTO
+  vive aislado en cada agente/engine (p. ej. `aMetricas`, `aItem`). Regla: si es
+  público, camelCase; si es un DTO interno de un `.logic`, se deja como vino.
 
 ## Scripts
 
