@@ -1,0 +1,26 @@
+{
+  "name": "@agent-core/app-ejemplo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Adapter de referencia in-memory: implementa providers + CoreStore para un smoke end-to-end.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "demo": "node dist/demo.js"
+  },
+  "dependencies": {
+    "@agent-core/contracts": "*",
+    "@agent-core/core": "*",
+    "@agent-core/agents": "*"
+  }
+}

@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 // Son la red de paridad: si pasan, la lógica portada de Regionales se preservó.
 export default defineConfig({
   test: {
-    include: ["packages/**/src/**/*.test.ts"],
+    include: ["packages/**/src/**/*.test.ts", "apps/**/src/**/*.test.ts"],
     exclude: ["**/node_modules/**", "**/dist/**"],
   },
 });

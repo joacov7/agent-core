@@ -20,6 +20,11 @@ packages/
 Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapters
 (dominio → canónico), domain tools, auth, resolución de tenant, schema y UI.
 
+```
+apps/
+  ejemplo/       @agent-core/app-ejemplo  adapter de referencia in-memory + smoke e2e
+```
+
 ## Estado
 
 - ✅ Scaffold del monorepo + `@agent-core/contracts` completo.
@@ -46,10 +51,14 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
   `resumenRentabilidad`), métodos opcionales que el adaptador implementa si puede darlos.
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
+- ✅ `@agent-core/app-ejemplo`: adapter de referencia in-memory (providers con
+  datos sembrados + `CoreStore` con aislamiento por tenant + tools de escritura +
+  mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
+  y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**136 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**143 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-wiring de los agentes contra los agregados de los providers.
+wiring de los agentes contra los agregados + smoke end-to-end del adapter de referencia.
 
 ## Principios
 
