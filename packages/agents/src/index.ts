@@ -14,3 +14,6 @@ export * from "./agentes/seguimiento/index.js";
 export * from "./agentes/riesgo-abandono/index.js";
 export * from "./agentes/competencia/index.js";
 export * from "./agentes/precios/index.js";
+export * from "./agentes/compras/index.js";
+export * from "./agentes/logistica/index.js";
+export * from "./agentes/produccion/index.js";

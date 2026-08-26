@@ -14,7 +14,8 @@ describe("smoke end-to-end (adapter de referencia)", () => {
     const app = crearApp();
     const capacidades = capacidadesDeProviders(app.providers);
     expect(new Set(capacidades)).toEqual(new Set([
-      "contacts", "transactions", "catalog", "receivables", "agenda", "inventory", "suppliers", "pipeline", "competition",
+      "contacts", "transactions", "catalog", "receivables", "agenda", "inventory", "suppliers", "pipeline",
+      "competition", "logistics", "production",
     ]));
 
     const activables = manifestsActivables(catalogo, { capacidades, modeloNegocio: app.modeloNegocio })
@@ -22,6 +23,7 @@ describe("smoke end-to-end (adapter de referencia)", () => {
     expect(new Set(activables)).toEqual(new Set([
       "tareas", "whatsapp", "crm", "oportunidades", "rentabilidad", "cobros", "agenda", "inventario",
       "morosidad", "flujo_caja", "seguimiento", "riesgo_abandono", "competencia", "precios",
+      "compras", "logistica", "produccion",
     ]));
   });
 
@@ -41,6 +43,7 @@ describe("smoke end-to-end (adapter de referencia)", () => {
       "reactivacion", "venta_cruzada", "margen_bajo", "inmovilizado", "atencion_pedido", "atencion_reclamo",
       "cobro_vencido", "vencimiento", "reponer", "mora_media", "flujo_negativo",
       "seguimiento", "churn_perdido", "competencia_por_encima", "ajuste_precio",
+      "comprar", "entrega", "proceso",
     ]));
     expect(items.every((r) => r.tenantId === "demo" && !!r.id && !!r.creadoEn)).toBe(true);
   });
