@@ -7,18 +7,21 @@ import {
 import { catalogo } from "@agent-core/agents";
 import { crearApp } from "./app.js";
 
-const ctx: TenantCtx = { tenantId: "demo", requestId: "req-e2e" };
+const ctx: TenantCtx = { tenantId: "demo", requestId: "req-e2e", now: () => new Date("2026-08-25T12:00:00.000Z") };
 
 describe("smoke end-to-end (adapter de referencia)", () => {
   it("activa el catálogo según capacidades + cadencia", () => {
     const app = crearApp();
     const capacidades = capacidadesDeProviders(app.providers);
-    expect(new Set(capacidades)).toEqual(new Set(["contacts", "transactions", "catalog", "receivables", "agenda", "inventory"]));
+    expect(new Set(capacidades)).toEqual(new Set([
+      "contacts", "transactions", "catalog", "receivables", "agenda", "inventory", "suppliers",
+    ]));
 
     const activables = manifestsActivables(catalogo, { capacidades, modeloNegocio: app.modeloNegocio })
       .map((a) => a.manifest.id);
     expect(new Set(activables)).toEqual(new Set([
       "tareas", "whatsapp", "crm", "oportunidades", "rentabilidad", "cobros", "agenda", "inventario",
+      "morosidad", "flujo_caja",
     ]));
   });
 
@@ -36,7 +39,7 @@ describe("smoke end-to-end (adapter de referencia)", () => {
     const tipos = items.map((r) => r.tipo);
     expect(tipos).toEqual(expect.arrayContaining([
       "reactivacion", "venta_cruzada", "margen_bajo", "inmovilizado", "atencion_pedido", "atencion_reclamo",
-      "cobro_vencido", "vencimiento", "reponer",
+      "cobro_vencido", "vencimiento", "reponer", "mora_media", "flujo_negativo",
     ]));
     expect(items.every((r) => r.tenantId === "demo" && !!r.id && !!r.creadoEn)).toBe(true);
   });

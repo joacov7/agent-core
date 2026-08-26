@@ -8,3 +8,5 @@ export * from "./agentes/rentabilidad/index.js";
 export * from "./agentes/cobros/index.js";
 export * from "./agentes/agenda/index.js";
 export * from "./agentes/inventario/index.js";
+export * from "./agentes/morosidad/index.js";
+export * from "./agentes/flujo-caja/index.js";
