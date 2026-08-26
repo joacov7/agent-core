@@ -1,5 +1,5 @@
 import type {
-  CanastaContacto, Cobro, Contacto, Evento, Existencia, Interaccion, ParComplementario,
+  CanastaContacto, Cobro, Compra, Contacto, Evento, Existencia, Interaccion, ParComplementario,
   ProviderRegistry, ResumenContacto, ResumenItem, TenantCtx,
 } from "@agent-core/contracts";
 
@@ -15,6 +15,7 @@ interface DatosTenant {
   cobros: Cobro[];
   eventos: Evento[];
   existencias: Existencia[];
+  compras: Compra[];
 }
 
 const HOY = "2026-08-25T12:00:00.000Z";
@@ -55,12 +56,16 @@ const DEMO: DatosTenant = {
     { id: "ex1", tenantId: "demo", creadoEn: HOY, catalogoItemId: "p1", cantidad: 2, minimo: 5 },
     { id: "ex2", tenantId: "demo", creadoEn: HOY, catalogoItemId: "p2", cantidad: 50, minimo: 5 },
   ],
+  compras: [
+    // Egreso a ~11 días → ventana 8-30. Supera al ingreso de esa ventana → déficit.
+    { id: "compra1", tenantId: "demo", creadoEn: HOY, proveedorId: "prov1", estado: "pendiente", monto: 80_000, moneda: "ARS", fecha: "2026-09-05T00:00:00.000Z" },
+  ],
 };
 
 const DATOS: Record<string, DatosTenant> = { demo: DEMO };
 const vacio: DatosTenant = {
   contactos: [], interacciones: [], resumenContactos: [], pares: [], canastas: [],
-  rentabilidad: [], cobros: [], eventos: [], existencias: [],
+  rentabilidad: [], cobros: [], eventos: [], existencias: [], compras: [],
 };
 const datos = (ctx: TenantCtx): DatosTenant => DATOS[ctx.tenantId] ?? vacio;
 
@@ -115,6 +120,10 @@ export function crearProviders(): ProviderRegistry {
       async lowStock(ctx) {
         return { items: datos(ctx).existencias.filter((e) => e.cantidad <= 0 || (e.minimo != null && e.cantidad <= e.minimo)) };
       },
+    },
+    suppliers: {
+      async list(ctx) { return { items: datos(ctx).contactos.filter((c) => c.roles?.includes("proveedor")) }; },
+      async purchases(ctx) { return { items: datos(ctx).compras }; },
     },
   };
 }
