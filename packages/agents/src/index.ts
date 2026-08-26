@@ -17,3 +17,5 @@ export * from "./agentes/precios/index.js";
 export * from "./agentes/compras/index.js";
 export * from "./agentes/logistica/index.js";
 export * from "./agentes/produccion/index.js";
+export * from "./agentes/postventa/index.js";
+export * from "./agentes/ventas/index.js";
