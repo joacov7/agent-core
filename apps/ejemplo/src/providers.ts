@@ -1,6 +1,7 @@
 import type {
   CanastaContacto, CatalogoItem, Cobro, Compra, Contacto, Evento, EvidenciaMercado, Existencia,
-  Interaccion, Oportunidad, ParComplementario, ProviderRegistry, ResumenContacto, ResumenItem, TenantCtx,
+  Interaccion, Oportunidad, ParComplementario, ProviderRegistry, ResumenContacto, ResumenItem,
+  Tarea, TenantCtx,
 } from "@agent-core/contracts";
 
 // Dataset de referencia por tenant. El tenant "demo" tiene datos; los demás, nada
@@ -19,6 +20,8 @@ interface DatosTenant {
   oportunidades: Oportunidad[];
   catalogo: CatalogoItem[];
   mercado: EvidenciaMercado[];
+  entregas: Tarea[];
+  procesos: Tarea[];
 }
 
 const HOY = "2026-08-25T12:00:00.000Z";
@@ -30,7 +33,7 @@ function interaccion(id: string, contactoId: string, texto: string): Interaccion
 }
 
 const DEMO: DatosTenant = {
-  contactos: [contacto("c1", "Ana"), contacto("c2", "Beto")],
+  contactos: [contacto("c1", "Ana"), contacto("c2", "Beto"), { ...contacto("prov1", "Distribuidora Sur"), roles: ["proveedor"] }],
   interacciones: [
     interaccion("i1", "c1", "hola, quiero comprar 3 mates"),          // pedido, alta intención
     interaccion("i2", "c2", "el mate llegó roto, quiero devolución"), // reclamo
@@ -77,13 +80,21 @@ const DEMO: DatosTenant = {
     // p2: en línea (~-2%).
     { id: "m2", tenantId: "demo", creadoEn: HOY, fuente: "scraper", refEntidad: { tipo: "catalogo_item", id: "p2" }, precio: 5100, moneda: "ARS", observadoEn: HOY },
   ],
+  entregas: [
+    { id: "ent1", tenantId: "demo", creadoEn: HOY, tipo: "entrega", titulo: "Entrega pedido #123", estado: "pendiente", venceEn: "2026-08-22T00:00:00.000Z" }, // demorada
+    { id: "ent2", tenantId: "demo", creadoEn: HOY, tipo: "entrega", titulo: "Entrega pedido #124", estado: "completada", venceEn: "2026-08-24T00:00:00.000Z" },
+  ],
+  procesos: [
+    { id: "proc1", tenantId: "demo", creadoEn: HOY, tipo: "faena", titulo: "Faena lote A", estado: "en_progreso", venceEn: "2026-08-24T00:00:00.000Z" }, // demorado
+    { id: "proc2", tenantId: "demo", creadoEn: HOY, tipo: "mantenimiento", titulo: "Service equipo 3", estado: "pendiente", venceEn: "2026-09-10T00:00:00.000Z" },
+  ],
 };
 
 const DATOS: Record<string, DatosTenant> = { demo: DEMO };
 const vacio: DatosTenant = {
   contactos: [], interacciones: [], resumenContactos: [], pares: [], canastas: [],
   rentabilidad: [], cobros: [], eventos: [], existencias: [], compras: [], oportunidades: [],
-  catalogo: [], mercado: [],
+  catalogo: [], mercado: [], entregas: [], procesos: [],
 };
 const datos = (ctx: TenantCtx): DatosTenant => DATOS[ctx.tenantId] ?? vacio;
 
@@ -144,6 +155,12 @@ export function crearProviders(): ProviderRegistry {
       async byContact(ctx, contactoId) {
         return { items: datos(ctx).oportunidades.filter((o) => o.contactoId === contactoId) };
       },
+    },
+    logistics: {
+      async deliveries(ctx) { return { items: datos(ctx).entregas }; },
+    },
+    production: {
+      async processes(ctx) { return { items: datos(ctx).procesos }; },
     },
   };
 }
