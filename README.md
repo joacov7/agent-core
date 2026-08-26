@@ -43,7 +43,9 @@ apps/
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 19 agentes, **todos con `run()` funcional**.
+- ✅ `@agent-core/agents`: catálogo con 22 agentes, **todos con `run()` funcional**.
+  - dirección: `ceo`, `jefe` (Jefe de Gabinete), `analista` — leen las
+    recomendaciones ya generadas (vía `CoreStore`) y las resumen/priorizan.
   - clientes: `crm`, `oportunidades`, `seguimiento` (pipeline), `riesgo_abandono`
     (churn), `postventa` (recompra/reseña), más `whatsapp` (comunicación).
   - comercial: `competencia`, `precios` (competition + catalog; `precios` es
@@ -54,9 +56,8 @@ apps/
     `logistica` (logistics), `produccion` (production).
   - organización: `agenda` (agenda), `tareas`.
   Cada uno = `.logic` pura con tests + wrapper `Agent` con manifest completo
-  (capacidades + cadencia). Pendiente: `prospeccion` (necesita una capacidad de
-  fuentes externas aún no modelada) y los de dirección (CEO / Jefe de Gabinete /
-  Analista), que leen recomendaciones vía `CoreStore`.
+  (capacidades + cadencia). Único pendiente del catálogo: `prospeccion` (necesita
+  una capacidad de fuentes externas aún no modelada).
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 - ✅ `@agent-core/app-ejemplo`: adapter de referencia in-memory (providers con
@@ -64,9 +65,9 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**234 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**244 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-los 19 agentes del catálogo + smoke end-to-end del adapter de referencia.
+los 22 agentes del catálogo + smoke end-to-end del adapter de referencia.
 
 ## Principios
 
