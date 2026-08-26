@@ -43,18 +43,20 @@ apps/
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 17 agentes, **todos con `run()` funcional**.
+- ✅ `@agent-core/agents`: catálogo con 19 agentes, **todos con `run()` funcional**.
   - clientes: `crm`, `oportunidades`, `seguimiento` (pipeline), `riesgo_abandono`
-    (churn), más `whatsapp` (comunicación).
+    (churn), `postventa` (recompra/reseña), más `whatsapp` (comunicación).
   - comercial: `competencia`, `precios` (competition + catalog; `precios` es
-    accionable vía `aplicar_precio`, interceptado por el enforcement).
+    accionable vía `aplicar_precio`, interceptado por el enforcement), `ventas` (pipeline).
   - finanzas: `cobros`, `morosidad` (receivables), `flujo_caja` (receivables +
     suppliers opc.), `rentabilidad`.
   - operaciones: `inventario` (inventory), `compras` (suppliers + inventory),
     `logistica` (logistics), `produccion` (production).
   - organización: `agenda` (agenda), `tareas`.
   Cada uno = `.logic` pura con tests + wrapper `Agent` con manifest completo
-  (capacidades + cadencia).
+  (capacidades + cadencia). Pendiente: `prospeccion` (necesita una capacidad de
+  fuentes externas aún no modelada) y los de dirección (CEO / Jefe de Gabinete /
+  Analista), que leen recomendaciones vía `CoreStore`.
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 - ✅ `@agent-core/app-ejemplo`: adapter de referencia in-memory (providers con
@@ -62,9 +64,9 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**222 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**234 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-los 17 agentes del catálogo + smoke end-to-end del adapter de referencia.
+los 19 agentes del catálogo + smoke end-to-end del adapter de referencia.
 
 ## Principios
 
