@@ -9,6 +9,8 @@ import { agenteAgenda } from "./agentes/agenda/index.js";
 import { agenteInventario } from "./agentes/inventario/index.js";
 import { agenteMorosidad } from "./agentes/morosidad/index.js";
 import { agenteFlujoCaja } from "./agentes/flujo-caja/index.js";
+import { agenteSeguimiento } from "./agentes/seguimiento/index.js";
+import { agenteRiesgoAbandono } from "./agentes/riesgo-abandono/index.js";
 
 /**
  * Catálogo de agentes reutilizables. El engine lo recorre y activa cada agente si
@@ -33,4 +35,6 @@ export const catalogo: Agent[] = [
   agenteInventario,
   agenteMorosidad,
   agenteFlujoCaja,
+  agenteSeguimiento,
+  agenteRiesgoAbandono,
 ];

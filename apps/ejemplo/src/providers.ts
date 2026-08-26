@@ -1,6 +1,6 @@
 import type {
-  CanastaContacto, Cobro, Compra, Contacto, Evento, Existencia, Interaccion, ParComplementario,
-  ProviderRegistry, ResumenContacto, ResumenItem, TenantCtx,
+  CanastaContacto, Cobro, Compra, Contacto, Evento, Existencia, Interaccion, Oportunidad,
+  ParComplementario, ProviderRegistry, ResumenContacto, ResumenItem, TenantCtx,
 } from "@agent-core/contracts";
 
 // Dataset de referencia por tenant. El tenant "demo" tiene datos; los demás, nada
@@ -16,6 +16,7 @@ interface DatosTenant {
   eventos: Evento[];
   existencias: Existencia[];
   compras: Compra[];
+  oportunidades: Oportunidad[];
 }
 
 const HOY = "2026-08-25T12:00:00.000Z";
@@ -60,12 +61,16 @@ const DEMO: DatosTenant = {
     // Egreso a ~11 días → ventana 8-30. Supera al ingreso de esa ventana → déficit.
     { id: "compra1", tenantId: "demo", creadoEn: HOY, proveedorId: "prov1", estado: "pendiente", monto: 80_000, moneda: "ARS", fecha: "2026-09-05T00:00:00.000Z" },
   ],
+  oportunidades: [
+    { id: "op1", tenantId: "demo", creadoEn: HOY, contactoId: "c1", etapa: "propuesta", titulo: "Presupuesto pintura", valorEstimado: 300_000, cierreEstimado: "2026-08-10T00:00:00.000Z" }, // vencida
+    { id: "op2", tenantId: "demo", creadoEn: HOY, contactoId: "c2", etapa: "negociacion", titulo: "Ampliación", valorEstimado: 500_000, cierreEstimado: "2026-12-01T00:00:00.000Z" }, // cómoda
+  ],
 };
 
 const DATOS: Record<string, DatosTenant> = { demo: DEMO };
 const vacio: DatosTenant = {
   contactos: [], interacciones: [], resumenContactos: [], pares: [], canastas: [],
-  rentabilidad: [], cobros: [], eventos: [], existencias: [], compras: [],
+  rentabilidad: [], cobros: [], eventos: [], existencias: [], compras: [], oportunidades: [],
 };
 const datos = (ctx: TenantCtx): DatosTenant => DATOS[ctx.tenantId] ?? vacio;
 
@@ -124,6 +129,12 @@ export function crearProviders(): ProviderRegistry {
     suppliers: {
       async list(ctx) { return { items: datos(ctx).contactos.filter((c) => c.roles?.includes("proveedor")) }; },
       async purchases(ctx) { return { items: datos(ctx).compras }; },
+    },
+    pipeline: {
+      async open(ctx) { return { items: datos(ctx).oportunidades }; },
+      async byContact(ctx, contactoId) {
+        return { items: datos(ctx).oportunidades.filter((o) => o.contactoId === contactoId) };
+      },
     },
   };
 }
