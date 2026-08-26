@@ -1,0 +1,26 @@
+{
+  "name": "@agent-core/app-juridico",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Segundo adapter de referencia: estudio jurídico (cadencia proyecto). Prueba de reutilización del Core.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "demo": "node dist/demo.js"
+  },
+  "dependencies": {
+    "@agent-core/contracts": "*",
+    "@agent-core/core": "*",
+    "@agent-core/agents": "*"
+  }
+}
