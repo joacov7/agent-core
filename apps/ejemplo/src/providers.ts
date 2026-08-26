@@ -1,6 +1,6 @@
 import type {
-  CanastaContacto, Cobro, Compra, Contacto, Evento, Existencia, Interaccion, Oportunidad,
-  ParComplementario, ProviderRegistry, ResumenContacto, ResumenItem, TenantCtx,
+  CanastaContacto, CatalogoItem, Cobro, Compra, Contacto, Evento, EvidenciaMercado, Existencia,
+  Interaccion, Oportunidad, ParComplementario, ProviderRegistry, ResumenContacto, ResumenItem, TenantCtx,
 } from "@agent-core/contracts";
 
 // Dataset de referencia por tenant. El tenant "demo" tiene datos; los demás, nada
@@ -17,6 +17,8 @@ interface DatosTenant {
   existencias: Existencia[];
   compras: Compra[];
   oportunidades: Oportunidad[];
+  catalogo: CatalogoItem[];
+  mercado: EvidenciaMercado[];
 }
 
 const HOY = "2026-08-25T12:00:00.000Z";
@@ -65,12 +67,23 @@ const DEMO: DatosTenant = {
     { id: "op1", tenantId: "demo", creadoEn: HOY, contactoId: "c1", etapa: "propuesta", titulo: "Presupuesto pintura", valorEstimado: 300_000, cierreEstimado: "2026-08-10T00:00:00.000Z" }, // vencida
     { id: "op2", tenantId: "demo", creadoEn: HOY, contactoId: "c2", etapa: "negociacion", titulo: "Ampliación", valorEstimado: 500_000, cierreEstimado: "2026-12-01T00:00:00.000Z" }, // cómoda
   ],
+  catalogo: [
+    { id: "p1", tenantId: "demo", creadoEn: HOY, nombre: "Mate", precio: 1200, costo: 600 },
+    { id: "p2", tenantId: "demo", creadoEn: HOY, nombre: "Termo", precio: 5000, costo: 3000 },
+  ],
+  mercado: [
+    // p1: estamos +33% vs mercado → caros; hay margen para bajar a 900.
+    { id: "m1", tenantId: "demo", creadoEn: HOY, fuente: "scraper", refEntidad: { tipo: "catalogo_item", id: "p1" }, precio: 900, moneda: "ARS", observadoEn: HOY },
+    // p2: en línea (~-2%).
+    { id: "m2", tenantId: "demo", creadoEn: HOY, fuente: "scraper", refEntidad: { tipo: "catalogo_item", id: "p2" }, precio: 5100, moneda: "ARS", observadoEn: HOY },
+  ],
 };
 
 const DATOS: Record<string, DatosTenant> = { demo: DEMO };
 const vacio: DatosTenant = {
   contactos: [], interacciones: [], resumenContactos: [], pares: [], canastas: [],
   rentabilidad: [], cobros: [], eventos: [], existencias: [], compras: [], oportunidades: [],
+  catalogo: [], mercado: [],
 };
 const datos = (ctx: TenantCtx): DatosTenant => DATOS[ctx.tenantId] ?? vacio;
 
@@ -98,16 +111,12 @@ export function crearProviders(): ProviderRegistry {
       async canastasPorContacto(ctx) { return { items: datos(ctx).canastas }; },
     },
     catalog: {
-      async items(ctx) {
-        return {
-          items: datos(ctx).rentabilidad.map((r) => ({
-            id: r.catalogoItemId, tenantId: ctx.tenantId, creadoEn: HOY, nombre: r.nombre, precio: r.precio,
-            ...(r.costo != null ? { costo: r.costo } : {}),
-          })),
-        };
-      },
-      async get() { return null; },
+      async items(ctx) { return { items: datos(ctx).catalogo }; },
+      async get(ctx, id) { return datos(ctx).catalogo.find((i) => i.id === id) ?? null; },
       async resumenRentabilidad(ctx) { return { items: datos(ctx).rentabilidad }; },
+    },
+    competition: {
+      async marketEvidence(ctx) { return { items: datos(ctx).mercado }; },
     },
     receivables: {
       async pending(ctx) {
