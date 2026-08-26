@@ -4,6 +4,9 @@ import { agenteWhatsapp } from "./agentes/whatsapp/index.js";
 import { agenteCrm } from "./agentes/crm/index.js";
 import { agenteOportunidades } from "./agentes/oportunidades/index.js";
 import { agenteRentabilidad } from "./agentes/rentabilidad/index.js";
+import { agenteCobros } from "./agentes/cobros/index.js";
+import { agenteAgenda } from "./agentes/agenda/index.js";
+import { agenteInventario } from "./agentes/inventario/index.js";
 
 /**
  * Catálogo de agentes reutilizables. El engine lo recorre y activa cada agente si
@@ -23,4 +26,7 @@ export const catalogo: Agent[] = [
   agenteCrm,
   agenteOportunidades,
   agenteRentabilidad,
+  agenteCobros,
+  agenteAgenda,
+  agenteInventario,
 ];

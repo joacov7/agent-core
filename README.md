@@ -43,12 +43,13 @@ apps/
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 5 agentes, **todos con `run()` funcional**.
-  `.logic` de crm/oportunidades/whatsapp/rentabilidad portados con sus tests,
-  envueltos en el contrato `Agent` con manifests completos (capacidades + cadencia).
-  crm/oportunidades/rentabilidad consumen los **agregados analíticos** de los
-  providers (`resumenPorContacto`, `paresComplementarios`/`canastasPorContacto`,
-  `resumenRentabilidad`), métodos opcionales que el adaptador implementa si puede darlos.
+- ✅ `@agent-core/agents`: catálogo con 8 agentes, **todos con `run()` funcional**.
+  - clientes/comercial: `crm`, `oportunidades`, `rentabilidad`, `whatsapp` (usan los
+    agregados analíticos de los providers y la clasificación por reglas).
+  - finanzas/organización/operaciones: `cobros` (receivables), `agenda` (agenda),
+    `inventario` (inventory), más `tareas`.
+  Cada uno = `.logic` pura con tests + wrapper `Agent` con manifest completo
+  (capacidades + cadencia).
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 - ✅ `@agent-core/app-ejemplo`: adapter de referencia in-memory (providers con
@@ -56,9 +57,9 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**144 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**167 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-wiring de los agentes contra los agregados + smoke end-to-end del adapter de referencia.
+los 8 agentes del catálogo + smoke end-to-end del adapter de referencia.
 
 ## Principios
 

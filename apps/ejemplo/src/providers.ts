@@ -1,6 +1,6 @@
 import type {
-  CanastaContacto, Contacto, Interaccion, ParComplementario, ProviderRegistry,
-  ResumenContacto, ResumenItem, TenantCtx,
+  CanastaContacto, Cobro, Contacto, Evento, Existencia, Interaccion, ParComplementario,
+  ProviderRegistry, ResumenContacto, ResumenItem, TenantCtx,
 } from "@agent-core/contracts";
 
 // Dataset de referencia por tenant. El tenant "demo" tiene datos; los demás, nada
@@ -12,6 +12,9 @@ interface DatosTenant {
   pares: ParComplementario[];
   canastas: CanastaContacto[];
   rentabilidad: ResumenItem[];
+  cobros: Cobro[];
+  eventos: Evento[];
+  existencias: Existencia[];
 }
 
 const HOY = "2026-08-25T12:00:00.000Z";
@@ -40,10 +43,25 @@ const DEMO: DatosTenant = {
     { catalogoItemId: "p1", nombre: "Mate", precio: 1000, costo: 900, margenPct: 10, ventas30d: 20, stock: 5, valorInmovilizado: 0 },
     { catalogoItemId: "p2", nombre: "Termo", precio: 5000, costo: 3000, margenPct: 40, ventas30d: 0, stock: 40, valorInmovilizado: 200_000 },
   ],
+  cobros: [
+    { id: "cob1", tenantId: "demo", creadoEn: HOY, contactoId: "c1", estado: "vencido", monto: 150_000, moneda: "ARS", venceEn: "2026-07-01T00:00:00.000Z" },
+    { id: "cob2", tenantId: "demo", creadoEn: HOY, contactoId: "c2", estado: "pendiente", monto: 5_000, moneda: "ARS", venceEn: "2026-12-01T00:00:00.000Z" },
+  ],
+  eventos: [
+    { id: "ev1", tenantId: "demo", creadoEn: HOY, tipo: "vencimiento", titulo: "Vencimiento AFIP", inicia: "2026-08-20T00:00:00.000Z" },
+    { id: "ev2", tenantId: "demo", creadoEn: HOY, tipo: "turno", titulo: "Reunión Q4", inicia: "2026-11-01T00:00:00.000Z" },
+  ],
+  existencias: [
+    { id: "ex1", tenantId: "demo", creadoEn: HOY, catalogoItemId: "p1", cantidad: 2, minimo: 5 },
+    { id: "ex2", tenantId: "demo", creadoEn: HOY, catalogoItemId: "p2", cantidad: 50, minimo: 5 },
+  ],
 };
 
 const DATOS: Record<string, DatosTenant> = { demo: DEMO };
-const vacio: DatosTenant = { contactos: [], interacciones: [], resumenContactos: [], pares: [], canastas: [], rentabilidad: [] };
+const vacio: DatosTenant = {
+  contactos: [], interacciones: [], resumenContactos: [], pares: [], canastas: [],
+  rentabilidad: [], cobros: [], eventos: [], existencias: [],
+};
 const datos = (ctx: TenantCtx): DatosTenant => DATOS[ctx.tenantId] ?? vacio;
 
 /** ProviderRegistry in-memory. Expone contacts, transactions (+agregados) y catalog. */
@@ -80,6 +98,23 @@ export function crearProviders(): ProviderRegistry {
       },
       async get() { return null; },
       async resumenRentabilidad(ctx) { return { items: datos(ctx).rentabilidad }; },
+    },
+    receivables: {
+      async pending(ctx) {
+        return { items: datos(ctx).cobros.filter((c) => c.estado !== "cobrado" && c.estado !== "incobrable") };
+      },
+      async overdue(ctx) {
+        return { items: datos(ctx).cobros.filter((c) => !!c.venceEn && c.venceEn < HOY) };
+      },
+    },
+    agenda: {
+      async upcoming(ctx) { return { items: datos(ctx).eventos }; },
+    },
+    inventory: {
+      async stock(ctx) { return { items: datos(ctx).existencias }; },
+      async lowStock(ctx) {
+        return { items: datos(ctx).existencias.filter((e) => e.cantidad <= 0 || (e.minimo != null && e.cantidad <= e.minimo)) };
+      },
     },
   };
 }
