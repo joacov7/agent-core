@@ -43,11 +43,11 @@ apps/
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 10 agentes, **todos con `run()` funcional**.
-  - clientes/comercial: `crm`, `oportunidades`, `rentabilidad`, `whatsapp` (usan los
-    agregados analíticos de los providers y la clasificación por reglas).
+- ✅ `@agent-core/agents`: catálogo con 12 agentes, **todos con `run()` funcional**.
+  - clientes: `crm`, `oportunidades`, `seguimiento` (pipeline), `riesgo_abandono`
+    (churn), más `whatsapp` (comunicación).
   - finanzas: `cobros`, `morosidad` (receivables), `flujo_caja` (receivables +
-    suppliers opc.).
+    suppliers opc.), `rentabilidad`.
   - organización/operaciones: `agenda` (agenda), `inventario` (inventory), `tareas`.
   Cada uno = `.logic` pura con tests + wrapper `Agent` con manifest completo
   (capacidades + cadencia).
@@ -58,9 +58,9 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**179 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**193 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-los 10 agentes del catálogo + smoke end-to-end del adapter de referencia.
+los 12 agentes del catálogo + smoke end-to-end del adapter de referencia.
 
 ## Principios
 

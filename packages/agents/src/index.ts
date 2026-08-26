@@ -10,3 +10,5 @@ export * from "./agentes/agenda/index.js";
 export * from "./agentes/inventario/index.js";
 export * from "./agentes/morosidad/index.js";
 export * from "./agentes/flujo-caja/index.js";
+export * from "./agentes/seguimiento/index.js";
+export * from "./agentes/riesgo-abandono/index.js";
