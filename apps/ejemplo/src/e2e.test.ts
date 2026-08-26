@@ -24,6 +24,7 @@ describe("smoke end-to-end (adapter de referencia)", () => {
       "tareas", "whatsapp", "crm", "oportunidades", "rentabilidad", "cobros", "agenda", "inventario",
       "morosidad", "flujo_caja", "seguimiento", "riesgo_abandono", "competencia", "precios",
       "compras", "logistica", "produccion", "postventa", "ventas",
+      "analista", "ceo", "jefe",
     ]));
   });
 
