@@ -50,21 +50,23 @@ apps/
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 22 agentes, **todos con `run()` funcional**.
+- ✅ `@agent-core/agents`: catálogo con 23 agentes, **todos con `run()` funcional**.
   - dirección: `ceo`, `jefe` (Jefe de Gabinete), `analista` — leen las
     recomendaciones ya generadas (vía `CoreStore`) y las resumen/priorizan.
   - clientes: `crm`, `oportunidades`, `seguimiento` (pipeline), `riesgo_abandono`
     (churn), `postventa` (recompra/reseña), más `whatsapp` (comunicación).
   - comercial: `competencia`, `precios` (competition + catalog; `precios` es
-    accionable vía `aplicar_precio`, interceptado por el enforcement), `ventas` (pipeline).
+    accionable vía `aplicar_precio`, interceptado por el enforcement), `ventas` (pipeline),
+    `prospeccion` (fuentes externas: prioriza prospectos por encaje y descarta los
+    que ya están en la base).
   - finanzas: `cobros`, `morosidad` (receivables), `flujo_caja` (receivables +
     suppliers opc.), `rentabilidad`.
   - operaciones: `inventario` (inventory), `compras` (suppliers + inventory),
     `logistica` (logistics), `produccion` (production).
   - organización: `agenda` (agenda), `tareas`.
   Cada uno = `.logic` pura con tests + wrapper `Agent` con manifest completo
-  (capacidades + cadencia). Único pendiente del catálogo: `prospeccion` (necesita
-  una capacidad de fuentes externas aún no modelada).
+  (capacidades + cadencia). Catálogo completo: `prospeccion` cierra el último
+  pendiente sumando la capacidad `external-sources` (prospectos/señales externas).
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 - ✅ `@agent-core/app-ejemplo`: adapter de referencia in-memory (providers con
@@ -72,9 +74,9 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**246 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**257 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-los 22 agentes del catálogo + smoke end-to-end de **dos** adapters (retail y jurídico).
+los 23 agentes del catálogo + smoke end-to-end de **dos** adapters (retail y jurídico).
 
 ## Principios
 

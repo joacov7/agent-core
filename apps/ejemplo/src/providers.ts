@@ -1,7 +1,7 @@
 import type {
   CanastaContacto, CatalogoItem, Cobro, Compra, Contacto, Evento, EvidenciaMercado, Existencia,
   Interaccion, Oportunidad, ParComplementario, ProviderRegistry, ResumenContacto, ResumenItem,
-  Tarea, TenantCtx,
+  SenalExterna, Tarea, TenantCtx,
 } from "@agent-core/contracts";
 
 // Dataset de referencia por tenant. El tenant "demo" tiene datos; los demás, nada
@@ -22,6 +22,7 @@ interface DatosTenant {
   mercado: EvidenciaMercado[];
   entregas: Tarea[];
   procesos: Tarea[];
+  senales: SenalExterna[];
 }
 
 const HOY = "2026-08-25T12:00:00.000Z";
@@ -88,13 +89,22 @@ const DEMO: DatosTenant = {
     { id: "proc1", tenantId: "demo", creadoEn: HOY, tipo: "faena", titulo: "Faena lote A", estado: "en_progreso", venceEn: "2026-08-24T00:00:00.000Z" }, // demorado
     { id: "proc2", tenantId: "demo", creadoEn: HOY, tipo: "mantenimiento", titulo: "Service equipo 3", estado: "pendiente", venceEn: "2026-09-10T00:00:00.000Z" },
   ],
+  senales: [
+    // Referido fuerte, no está en la base → prospecto top.
+    { id: "s1", tenantId: "demo", creadoEn: HOY, fuente: "referido", nombre: "Carla Núñez", clave: "carla@nuevo.com", motivo: "la recomendó Ana", observadoEn: HOY },
+    // Ana YA es contacto (email en la base a través del referido) → se descarta si coincide;
+    // acá usamos una clave que sí está para probar el dedup contra la base.
+    { id: "s2", tenantId: "demo", creadoEn: HOY, fuente: "marketplace", nombre: "Diego R.", clave: "diego@shop.com", score: 70, observadoEn: HOY },
+    // Señal web floja → cae por debajo de la confianza mínima.
+    { id: "s3", tenantId: "demo", creadoEn: HOY, fuente: "web", nombre: "Anónimo", clave: "anon@web.com", observadoEn: HOY },
+  ],
 };
 
 const DATOS: Record<string, DatosTenant> = { demo: DEMO };
 const vacio: DatosTenant = {
   contactos: [], interacciones: [], resumenContactos: [], pares: [], canastas: [],
   rentabilidad: [], cobros: [], eventos: [], existencias: [], compras: [], oportunidades: [],
-  catalogo: [], mercado: [], entregas: [], procesos: [],
+  catalogo: [], mercado: [], entregas: [], procesos: [], senales: [],
 };
 const datos = (ctx: TenantCtx): DatosTenant => DATOS[ctx.tenantId] ?? vacio;
 
@@ -161,6 +171,9 @@ export function crearProviders(): ProviderRegistry {
     },
     production: {
       async processes(ctx) { return { items: datos(ctx).procesos }; },
+    },
+    externalSources: {
+      async prospects(ctx) { return { items: datos(ctx).senales }; },
     },
   };
 }

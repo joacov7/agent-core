@@ -11,7 +11,7 @@ import type { Interaccion } from "../canonical/interaccion.js";
 import type { Tarea } from "../canonical/tarea.js";
 import type {
   Transaccion, Cobro, Oportunidad, Evento, Documento,
-  CatalogoItem, Existencia, EvidenciaMercado, Compra,
+  CatalogoItem, Existencia, EvidenciaMercado, Compra, SenalExterna,
 } from "../canonical/opcionales.js";
 import type {
   ResumenContacto, ParComplementario, CanastaContacto, ResumenItem,
@@ -110,4 +110,10 @@ export interface ProductionProvider {
 /** Entregas/envíos modelados como Tarea (+ Evento vía agenda). */
 export interface LogisticsProvider {
   deliveries(ctx: TenantCtx, query?: ListQuery): Promise<Page<Tarea>>;
+}
+
+/* ── external-sources ─────────────────────────────────────────────────────── */
+/** Prospectos/señales de fuentes externas (directorios, referidos, web). Prospección. */
+export interface ExternalSourcesProvider {
+  prospects(ctx: TenantCtx, query?: ListQuery): Promise<Page<SenalExterna>>;
 }

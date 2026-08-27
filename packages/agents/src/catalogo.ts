@@ -18,6 +18,7 @@ import { agenteLogistica } from "./agentes/logistica/index.js";
 import { agenteProduccion } from "./agentes/produccion/index.js";
 import { agentePostventa } from "./agentes/postventa/index.js";
 import { agenteVentas } from "./agentes/ventas/index.js";
+import { agenteProspeccion } from "./agentes/prospeccion/index.js";
 import { agenteAnalista } from "./agentes/analista/index.js";
 import { agenteCeo } from "./agentes/ceo/index.js";
 import { agenteJefeGabinete } from "./agentes/jefe-gabinete/index.js";
@@ -54,6 +55,7 @@ export const catalogo: Agent[] = [
   agenteProduccion,
   agentePostventa,
   agenteVentas,
+  agenteProspeccion,
   // Dirección al final: CEO y Jefe de Gabinete resumen las recomendaciones que ya
   // produjeron los demás agentes (leídas del CoreStore).
   agenteAnalista,

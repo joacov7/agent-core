@@ -106,3 +106,22 @@ export interface Compra extends CanonicalEntity {
   moneda?: string;
   fecha?: ISODateTime;
 }
+
+/**
+ * Señal externa: prospecto/lead descubierto FUERA de la base (directorio, referido,
+ * marketplace, web). Es un contacto *potencial*, todavía no un `Contacto`. La
+ * capacidad `external-sources` la aporta; el agente Prospección la prioriza por
+ * encaje y descarta las que ya existen en la base (dedup por `clave`).
+ */
+export interface SenalExterna extends CanonicalEntity {
+  fuente: string;              // de dónde salió (directorio, referido, marketplace, web…)
+  nombre: string;              // nombre del prospecto
+  /** Identificador de deduplicación contra la base (email / teléfono / CUIT). */
+  clave?: string;
+  /** Señal de intención o motivo de encaje (texto libre de la fuente). */
+  motivo?: string;
+  /** Encaje declarado por la fuente, 0..100 (opcional). */
+  score?: number;
+  observadoEn: ISODateTime;
+  refEntidad?: EntityRef;
+}

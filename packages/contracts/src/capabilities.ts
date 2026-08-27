@@ -18,4 +18,5 @@ export type CapabilityId =
   | "competition"   // precios / datos de mercado externos
   | "suppliers"     // proveedores y compras
   | "production"    // procesos productivos
-  | "logistics";    // envíos / entregas
+  | "logistics"     // envíos / entregas
+  | "external-sources"; // prospectos / señales de fuentes externas (directorios, referidos, web)
