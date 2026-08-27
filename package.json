@@ -12,7 +12,8 @@
     "packages/contracts",
     "packages/agent-core",
     "packages/agents",
-    "apps/ejemplo"
+    "apps/ejemplo",
+    "apps/juridico"
   ],
   "scripts": {
     "build": "tsc --build",

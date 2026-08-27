@@ -22,8 +22,15 @@ Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapter
 
 ```
 apps/
-  ejemplo/       @agent-core/app-ejemplo  adapter de referencia in-memory + smoke e2e
+  ejemplo/       @agent-core/app-ejemplo   adapter de referencia in-memory (retail) + smoke e2e
+  juridico/      @agent-core/app-juridico  segundo adapter (estudio jurídico, cadencia proyecto)
 ```
+
+> **Prueba de reutilización:** `apps/juridico` implementa los mismos contratos con
+> datos legales (comitente→Contacto, honorario→Cobro, audiencia→Evento,
+> escrito→Documento, consulta→Oportunidad) y cadencia `proyecto`. El **mismo
+> catálogo** activa Cobros/Morosidad/Agenda/Seguimiento/WhatsApp/… y **desactiva
+> solo** Rentabilidad/Precios/Inventario/CRM/Churn — sin tocar una línea de agente.
 
 ## Estado
 
@@ -65,9 +72,9 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**244 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**246 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-los 22 agentes del catálogo + smoke end-to-end del adapter de referencia.
+los 22 agentes del catálogo + smoke end-to-end de **dos** adapters (retail y jurídico).
 
 ## Principios
 
