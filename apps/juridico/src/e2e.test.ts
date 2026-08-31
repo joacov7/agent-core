@@ -15,12 +15,14 @@ describe("estudio jurídico — reutilización del Core (cadencia proyecto)", ()
     const activables = new Set(
       manifestsActivables(catalogo, { capacidades, modeloNegocio: app.modeloNegocio }).map((a) => a.manifest.id),
     );
-    // ON (doc sección 10): cobros, morosidad, agenda, seguimiento, whatsapp + genéricos.
+    // ON (doc sección 10): cobros, morosidad, cobranza preventiva, agenda, compliance,
+    // seguimiento, whatsapp + genéricos.
     expect(activables).toEqual(new Set([
-      "tareas", "whatsapp", "cobros", "morosidad", "flujo_caja", "agenda", "seguimiento", "ventas", "ceo", "jefe",
+      "tareas", "whatsapp", "cobros", "morosidad", "cobranza_preventiva", "flujo_caja",
+      "agenda", "compliance", "seguimiento", "ventas", "ceo", "jefe",
     ]));
     // OFF: los que asumen retail / compra repetida o capacidades que el estudio no tiene.
-    for (const off of ["crm", "oportunidades", "rentabilidad", "precios", "competencia", "inventario", "compras", "logistica", "produccion", "riesgo_abandono", "postventa", "analista"]) {
+    for (const off of ["crm", "oportunidades", "rentabilidad", "precios", "competencia", "inventario", "compras", "logistica", "produccion", "riesgo_abandono", "postventa", "analista", "prospeccion"]) {
       expect(activables.has(off)).toBe(false);
     }
   });
@@ -38,7 +40,9 @@ describe("estudio jurídico — reutilización del Core (cadencia proyecto)", ()
     expect(tipos).toEqual(expect.arrayContaining([
       "cobro_vencido",     // honorario vencido
       "mora_avanzada",     // honorario en mora avanzada
+      "cobro_por_vencer",  // honorario por vencer → cobranza preventiva
       "vencimiento",       // audiencia/plazo vencido
+      "compliance",        // obligación próxima sin escrito de respaldo
       "seguimiento",       // consulta sin cerrar
       "venta",             // consulta como oportunidad
       "atencion_consulta", // whatsapp entrante

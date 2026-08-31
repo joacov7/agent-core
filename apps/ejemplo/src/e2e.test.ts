@@ -22,7 +22,7 @@ describe("smoke end-to-end (adapter de referencia)", () => {
       .map((a) => a.manifest.id);
     expect(new Set(activables)).toEqual(new Set([
       "tareas", "whatsapp", "crm", "oportunidades", "rentabilidad", "cobros", "agenda", "inventario",
-      "morosidad", "flujo_caja", "seguimiento", "riesgo_abandono", "competencia", "precios",
+      "morosidad", "cobranza_preventiva", "flujo_caja", "seguimiento", "riesgo_abandono", "competencia", "precios",
       "compras", "logistica", "produccion", "postventa", "ventas", "prospeccion",
       "analista", "ceo", "jefe",
     ]));
@@ -44,7 +44,7 @@ describe("smoke end-to-end (adapter de referencia)", () => {
       "reactivacion", "venta_cruzada", "margen_bajo", "inmovilizado", "atencion_pedido", "atencion_reclamo",
       "cobro_vencido", "vencimiento", "reponer", "mora_media", "flujo_negativo",
       "seguimiento", "churn_perdido", "competencia_por_encima", "ajuste_precio",
-      "comprar", "entrega", "proceso", "postventa_resena", "venta", "prospecto",
+      "comprar", "entrega", "proceso", "postventa_resena", "venta", "prospecto", "cobro_por_vencer",
     ]));
     expect(items.every((r) => r.tenantId === "demo" && !!r.id && !!r.creadoEn)).toBe(true);
   });

@@ -54,6 +54,8 @@ const DEMO: DatosTenant = {
   cobros: [
     { id: "cob1", tenantId: "demo", creadoEn: HOY, contactoId: "c1", estado: "vencido", monto: 150_000, moneda: "ARS", venceEn: "2026-07-01T00:00:00.000Z" },
     { id: "cob2", tenantId: "demo", creadoEn: HOY, contactoId: "c2", estado: "pendiente", monto: 5_000, moneda: "ARS", venceEn: "2026-12-01T00:00:00.000Z" },
+    // Por vencer en 2 días → lo toma Cobranza preventiva (no Cobros, que es vencido).
+    { id: "cob3", tenantId: "demo", creadoEn: HOY, contactoId: "c2", estado: "pendiente", monto: 20_000, moneda: "ARS", venceEn: "2026-08-27T00:00:00.000Z" },
   ],
   eventos: [
     { id: "ev1", tenantId: "demo", creadoEn: HOY, tipo: "vencimiento", titulo: "Vencimiento AFIP", inicia: "2026-08-20T00:00:00.000Z" },
