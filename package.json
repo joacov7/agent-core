@@ -21,7 +21,10 @@
     "typecheck": "tsc --build --dry",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "echo \"(lint pendiente)\" && exit 0"
+    "lint": "echo \"(lint pendiente)\" && exit 0",
+    "release:check": "npm run build && npm test",
+    "publish:dry": "npm publish --dry-run -w @agent-core/contracts -w @agent-core/core -w @agent-core/agents",
+    "publish:all": "npm publish -w @agent-core/contracts -w @agent-core/core -w @agent-core/agents"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

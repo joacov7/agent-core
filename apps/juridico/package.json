@@ -19,8 +19,8 @@
     "demo": "node dist/demo.js"
   },
   "dependencies": {
-    "@agent-core/contracts": "*",
-    "@agent-core/core": "*",
-    "@agent-core/agents": "*"
+    "@agent-core/contracts": "^0.1.0",
+    "@agent-core/core": "^0.1.0",
+    "@agent-core/agents": "^0.1.0"
   }
 }

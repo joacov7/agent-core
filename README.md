@@ -117,4 +117,15 @@ npm install
 npm run build       # tsc --build de todos los paquetes (project references)
 npm run typecheck   # build --dry
 npm test            # vitest run (unit tests puros de los .logic)
+
+npm run release:check   # build + tests, antes de publicar
+npm run publish:dry     # ensayo de publicación (sin subir nada)
+npm run publish:all     # publica los 3 paquetes privados
 ```
+
+## Publicación
+
+Los tres paquetes `@agent-core/*` (`contracts`, `core`, `agents`) se publican como
+**privados** (`publishConfig.access: restricted`, `0.1.0`, solo `dist/` + README);
+las apps y la raíz quedan `private`. Detalles, orden y registry (npmjs / GitHub
+Packages) en [`PUBLISHING.md`](./PUBLISHING.md).

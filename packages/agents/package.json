@@ -1,8 +1,8 @@
 {
   "name": "@agent-core/agents",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Catálogo de agentes reutilizables. Usan solo contracts + core; no conocen el dominio.",
+  "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,13 +12,26 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "sideEffects": false,
+  "files": ["dist", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joacov7/agent-core.git",
+    "directory": "packages/agents"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
   "scripts": {
     "build": "tsc --build",
-    "clean": "tsc --build --clean"
+    "clean": "tsc --build --clean",
+    "prepublishOnly": "tsc --build"
   },
   "dependencies": {
-    "@agent-core/contracts": "*",
-    "@agent-core/core": "*"
+    "@agent-core/contracts": "^0.1.0",
+    "@agent-core/core": "^0.1.0"
   }
 }
