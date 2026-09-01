@@ -3,6 +3,7 @@ import type {
   CatalogProvider, InventoryProvider, AgendaProvider, PipelineProvider,
   DocumentsProvider, CompetitionProvider, SuppliersProvider, ProductionProvider,
   LogisticsProvider, ExternalSourcesProvider, FeedbackProvider, StaffProvider,
+  IncidentsProvider,
 } from "./capability-providers.js";
 import type { AiCompletionProvider } from "./ai.js";
 
@@ -28,6 +29,7 @@ export interface ProviderRegistry {
   externalSources?: ExternalSourcesProvider;
   feedback?: FeedbackProvider;
   staff?: StaffProvider;
+  incidents?: IncidentsProvider;
   /** Proveedor de IA (lo usan los agentes con nivelIA != "ninguno"). */
   ai?: AiCompletionProvider;
 }

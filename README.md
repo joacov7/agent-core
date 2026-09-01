@@ -50,7 +50,7 @@ apps/
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 27 agentes, **todos con `run()` funcional**.
+- ✅ `@agent-core/agents`: catálogo con 28 agentes, **todos con `run()` funcional**.
   - dirección: `ceo`, `jefe` (Jefe de Gabinete), `analista` — leen las
     recomendaciones ya generadas (vía `CoreStore`) y las resumen/priorizan.
   - clientes: `crm`, `oportunidades`, `seguimiento` (pipeline), `riesgo_abandono`
@@ -64,14 +64,17 @@ apps/
     (por vencer, antes de la mora) — los tres sobre receivables —, `flujo_caja`
     (receivables + suppliers opc.), `rentabilidad`.
   - operaciones: `inventario` (inventory), `compras` (suppliers + inventory),
-    `logistica` (logistics), `produccion` (production).
+    `logistica` (logistics), `produccion` (production), `sistemas` (incidents:
+    triage determinístico de incidentes de software — severidad × frecuencia ×
+    usuarios × recencia × entorno; solo prioriza, no toca código).
   - organización: `agenda` (agenda), `compliance` (agenda + documents: obligaciones
     regulatorias por vencer sin documento de respaldo), `rrhh` (staff: hitos de
     personal — fin de período de prueba, revisiones de desempeño), `tareas`.
   Cada uno = `.logic` pura con tests + wrapper `Agent` con manifest completo
   (capacidades + cadencia). Catálogo base completo: `prospeccion` sumó la capacidad
   `external-sources` (prospectos/señales externas); `nps` y `rrhh` sumaron
-  `feedback` y `staff`; `cobranza_preventiva` y
+  `feedback` y `staff`; `sistemas` sumó `incidents` (triage de bugs, primer paso
+  hacia un autofix gateado por enforcement); `cobranza_preventiva` y
   `compliance` amplían finanzas y organización reutilizando capacidades ya modeladas.
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
@@ -80,9 +83,9 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**296 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**306 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-los 27 agentes del catálogo + smoke end-to-end de **dos** adapters (retail y jurídico).
+los 28 agentes del catálogo + smoke end-to-end de **dos** adapters (retail y jurídico).
 
 ## Principios
 
