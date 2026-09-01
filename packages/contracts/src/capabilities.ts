@@ -19,4 +19,6 @@ export type CapabilityId =
   | "suppliers"     // proveedores y compras
   | "production"    // procesos productivos
   | "logistics"     // envíos / entregas
-  | "external-sources"; // prospectos / señales de fuentes externas (directorios, referidos, web)
+  | "external-sources" // prospectos / señales de fuentes externas (directorios, referidos, web)
+  | "feedback"      // respuestas de satisfacción / NPS / reseñas
+  | "staff";        // personal / empleados (RRHH)

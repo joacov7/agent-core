@@ -12,6 +12,7 @@ import type { Tarea } from "../canonical/tarea.js";
 import type {
   Transaccion, Cobro, Oportunidad, Evento, Documento,
   CatalogoItem, Existencia, EvidenciaMercado, Compra, SenalExterna,
+  RespuestaFeedback, Empleado,
 } from "../canonical/opcionales.js";
 import type {
   ResumenContacto, ParComplementario, CanastaContacto, ResumenItem,
@@ -116,4 +117,16 @@ export interface LogisticsProvider {
 /** Prospectos/señales de fuentes externas (directorios, referidos, web). Prospección. */
 export interface ExternalSourcesProvider {
   prospects(ctx: TenantCtx, query?: ListQuery): Promise<Page<SenalExterna>>;
+}
+
+/* ── feedback ─────────────────────────────────────────────────────────────── */
+/** Respuestas de satisfacción / NPS / reseñas. Reputación / NPS. */
+export interface FeedbackProvider {
+  responses(ctx: TenantCtx, query?: ListQuery): Promise<Page<RespuestaFeedback>>;
+}
+
+/* ── staff ────────────────────────────────────────────────────────────────── */
+/** Personal / empleados. RRHH. */
+export interface StaffProvider {
+  list(ctx: TenantCtx, query?: ListQuery): Promise<Page<Empleado>>;
 }

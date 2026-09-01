@@ -125,3 +125,29 @@ export interface SenalExterna extends CanonicalEntity {
   observadoEn: ISODateTime;
   refEntidad?: EntityRef;
 }
+
+/**
+ * Respuesta de satisfacción (NPS / CSAT / reseña). Capacidad: `feedback`.
+ * `puntaje` en escala 0..10 (NPS) por defecto; `escala` documenta el máximo si difiere.
+ */
+export interface RespuestaFeedback extends CanonicalEntity {
+  contactoId?: ID;
+  puntaje: number;             // 0..escala (NPS: 0..10)
+  escala?: number;             // máximo de la escala (default 10)
+  tipo?: string;               // "nps" | "csat" | "resena" | …
+  comentario?: string;
+  canal?: string;
+  respondidoEn: ISODateTime;
+}
+
+/** Persona del equipo. Capacidad: `staff` (RRHH). Fechas clave opcionales. */
+export interface Empleado extends CanonicalEntity {
+  nombre: string;
+  rol?: string;
+  estado?: string;             // "activo" | "licencia" | "baja" | …
+  ingreso?: ISODateTime;
+  /** Fin del período de prueba (a confirmar o desvincular). */
+  finPeriodoPrueba?: ISODateTime;
+  /** Próxima revisión de desempeño programada. */
+  proximaRevision?: ISODateTime;
+}

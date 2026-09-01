@@ -22,7 +22,7 @@ describe("estudio jurídico — reutilización del Core (cadencia proyecto)", ()
       "agenda", "compliance", "seguimiento", "ventas", "ceo", "jefe",
     ]));
     // OFF: los que asumen retail / compra repetida o capacidades que el estudio no tiene.
-    for (const off of ["crm", "oportunidades", "rentabilidad", "precios", "competencia", "inventario", "compras", "logistica", "produccion", "riesgo_abandono", "postventa", "analista", "prospeccion"]) {
+    for (const off of ["crm", "oportunidades", "rentabilidad", "precios", "competencia", "inventario", "compras", "logistica", "produccion", "riesgo_abandono", "postventa", "analista", "prospeccion", "nps", "rrhh"]) {
       expect(activables.has(off)).toBe(false);
     }
   });

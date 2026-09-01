@@ -1,7 +1,7 @@
 import type {
-  CanastaContacto, CatalogoItem, Cobro, Compra, Contacto, Evento, EvidenciaMercado, Existencia,
-  Interaccion, Oportunidad, ParComplementario, ProviderRegistry, ResumenContacto, ResumenItem,
-  SenalExterna, Tarea, TenantCtx,
+  CanastaContacto, CatalogoItem, Cobro, Compra, Contacto, Empleado, Evento, EvidenciaMercado, Existencia,
+  Interaccion, Oportunidad, ParComplementario, ProviderRegistry, RespuestaFeedback, ResumenContacto,
+  ResumenItem, SenalExterna, Tarea, TenantCtx,
 } from "@agent-core/contracts";
 
 // Dataset de referencia por tenant. El tenant "demo" tiene datos; los demás, nada
@@ -23,6 +23,8 @@ interface DatosTenant {
   entregas: Tarea[];
   procesos: Tarea[];
   senales: SenalExterna[];
+  feedbacks: RespuestaFeedback[];
+  empleados: Empleado[];
 }
 
 const HOY = "2026-08-25T12:00:00.000Z";
@@ -100,13 +102,22 @@ const DEMO: DatosTenant = {
     // Señal web floja → cae por debajo de la confianza mínima.
     { id: "s3", tenantId: "demo", creadoEn: HOY, fuente: "web", nombre: "Anónimo", clave: "anon@web.com", observadoEn: HOY },
   ],
+  feedbacks: [
+    { id: "fb1", tenantId: "demo", creadoEn: HOY, contactoId: "c1", puntaje: 10, tipo: "nps", respondidoEn: HOY }, // promotor
+    { id: "fb2", tenantId: "demo", creadoEn: HOY, contactoId: "c2", puntaje: 8, tipo: "nps", respondidoEn: HOY },  // pasivo
+    { id: "fb3", tenantId: "demo", creadoEn: HOY, contactoId: "c2", puntaje: 3, tipo: "nps", comentario: "el mate llegó roto", respondidoEn: HOY }, // detractor
+  ],
+  empleados: [
+    { id: "emp1", tenantId: "demo", creadoEn: "2026-06-01T00:00:00.000Z", nombre: "Lucía", rol: "Vendedora", estado: "activo", finPeriodoPrueba: "2026-09-01T00:00:00.000Z" }, // prueba por vencer
+    { id: "emp2", tenantId: "demo", creadoEn: "2025-01-01T00:00:00.000Z", nombre: "Marcos", rol: "Depósito", estado: "activo", proximaRevision: "2026-08-01T00:00:00.000Z" }, // revisión vencida
+  ],
 };
 
 const DATOS: Record<string, DatosTenant> = { demo: DEMO };
 const vacio: DatosTenant = {
   contactos: [], interacciones: [], resumenContactos: [], pares: [], canastas: [],
   rentabilidad: [], cobros: [], eventos: [], existencias: [], compras: [], oportunidades: [],
-  catalogo: [], mercado: [], entregas: [], procesos: [], senales: [],
+  catalogo: [], mercado: [], entregas: [], procesos: [], senales: [], feedbacks: [], empleados: [],
 };
 const datos = (ctx: TenantCtx): DatosTenant => DATOS[ctx.tenantId] ?? vacio;
 
@@ -176,6 +187,12 @@ export function crearProviders(): ProviderRegistry {
     },
     externalSources: {
       async prospects(ctx) { return { items: datos(ctx).senales }; },
+    },
+    feedback: {
+      async responses(ctx) { return { items: datos(ctx).feedbacks }; },
+    },
+    staff: {
+      async list(ctx) { return { items: datos(ctx).empleados }; },
     },
   };
 }

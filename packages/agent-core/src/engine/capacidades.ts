@@ -17,6 +17,8 @@ const MAPA_CAPACIDAD: Record<string, CapabilityId> = {
   production: "production",
   logistics: "logistics",
   externalSources: "external-sources",
+  feedback: "feedback",
+  staff: "staff",
 };
 
 /**
