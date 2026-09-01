@@ -8,6 +8,7 @@ import { agenteCobros } from "./agentes/cobros/index.js";
 import { agenteAgenda } from "./agentes/agenda/index.js";
 import { agenteInventario } from "./agentes/inventario/index.js";
 import { agenteMorosidad } from "./agentes/morosidad/index.js";
+import { agenteCobranzaPreventiva } from "./agentes/cobranza-preventiva/index.js";
 import { agenteFlujoCaja } from "./agentes/flujo-caja/index.js";
 import { agenteSeguimiento } from "./agentes/seguimiento/index.js";
 import { agenteRiesgoAbandono } from "./agentes/riesgo-abandono/index.js";
@@ -16,8 +17,12 @@ import { agentePrecios } from "./agentes/precios/index.js";
 import { agenteCompras } from "./agentes/compras/index.js";
 import { agenteLogistica } from "./agentes/logistica/index.js";
 import { agenteProduccion } from "./agentes/produccion/index.js";
+import { agenteCompliance } from "./agentes/compliance/index.js";
 import { agentePostventa } from "./agentes/postventa/index.js";
 import { agenteVentas } from "./agentes/ventas/index.js";
+import { agenteProspeccion } from "./agentes/prospeccion/index.js";
+import { agenteNps } from "./agentes/nps/index.js";
+import { agenteRrhh } from "./agentes/rrhh/index.js";
 import { agenteAnalista } from "./agentes/analista/index.js";
 import { agenteCeo } from "./agentes/ceo/index.js";
 import { agenteJefeGabinete } from "./agentes/jefe-gabinete/index.js";
@@ -44,6 +49,7 @@ export const catalogo: Agent[] = [
   agenteAgenda,
   agenteInventario,
   agenteMorosidad,
+  agenteCobranzaPreventiva,
   agenteFlujoCaja,
   agenteSeguimiento,
   agenteRiesgoAbandono,
@@ -52,8 +58,12 @@ export const catalogo: Agent[] = [
   agenteCompras,
   agenteLogistica,
   agenteProduccion,
+  agenteCompliance,
   agentePostventa,
   agenteVentas,
+  agenteProspeccion,
+  agenteNps,
+  agenteRrhh,
   // Dirección al final: CEO y Jefe de Gabinete resumen las recomendaciones que ya
   // produjeron los demás agentes (leídas del CoreStore).
   agenteAnalista,

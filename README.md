@@ -50,21 +50,29 @@ apps/
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 22 agentes, **todos con `run()` funcional**.
+- ✅ `@agent-core/agents`: catálogo con 27 agentes, **todos con `run()` funcional**.
   - dirección: `ceo`, `jefe` (Jefe de Gabinete), `analista` — leen las
     recomendaciones ya generadas (vía `CoreStore`) y las resumen/priorizan.
   - clientes: `crm`, `oportunidades`, `seguimiento` (pipeline), `riesgo_abandono`
-    (churn), `postventa` (recompra/reseña), más `whatsapp` (comunicación).
+    (churn), `postventa` (recompra/reseña), `nps` (feedback: calcula el NPS y abre
+    seguimiento de detractores), más `whatsapp` (comunicación).
   - comercial: `competencia`, `precios` (competition + catalog; `precios` es
-    accionable vía `aplicar_precio`, interceptado por el enforcement), `ventas` (pipeline).
-  - finanzas: `cobros`, `morosidad` (receivables), `flujo_caja` (receivables +
-    suppliers opc.), `rentabilidad`.
+    accionable vía `aplicar_precio`, interceptado por el enforcement), `ventas` (pipeline),
+    `prospeccion` (fuentes externas: prioriza prospectos por encaje y descarta los
+    que ya están en la base).
+  - finanzas: `cobros` (vencido), `morosidad` (mora avanzada), `cobranza_preventiva`
+    (por vencer, antes de la mora) — los tres sobre receivables —, `flujo_caja`
+    (receivables + suppliers opc.), `rentabilidad`.
   - operaciones: `inventario` (inventory), `compras` (suppliers + inventory),
     `logistica` (logistics), `produccion` (production).
-  - organización: `agenda` (agenda), `tareas`.
+  - organización: `agenda` (agenda), `compliance` (agenda + documents: obligaciones
+    regulatorias por vencer sin documento de respaldo), `rrhh` (staff: hitos de
+    personal — fin de período de prueba, revisiones de desempeño), `tareas`.
   Cada uno = `.logic` pura con tests + wrapper `Agent` con manifest completo
-  (capacidades + cadencia). Único pendiente del catálogo: `prospeccion` (necesita
-  una capacidad de fuentes externas aún no modelada).
+  (capacidades + cadencia). Catálogo base completo: `prospeccion` sumó la capacidad
+  `external-sources` (prospectos/señales externas); `nps` y `rrhh` sumaron
+  `feedback` y `staff`; `cobranza_preventiva` y
+  `compliance` amplían finanzas y organización reutilizando capacidades ya modeladas.
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 - ✅ `@agent-core/app-ejemplo`: adapter de referencia in-memory (providers con
@@ -72,9 +80,9 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**246 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**296 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-los 22 agentes del catálogo + smoke end-to-end de **dos** adapters (retail y jurídico).
+los 27 agentes del catálogo + smoke end-to-end de **dos** adapters (retail y jurídico).
 
 ## Principios
 

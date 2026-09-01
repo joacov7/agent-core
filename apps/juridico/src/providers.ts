@@ -30,10 +30,12 @@ const DEMO: DatosTenant = {
   honorarios: [
     { id: "hon1", tenantId: "estudio", creadoEn: HOY, contactoId: "com1", estado: "vencido", monto: 450_000, moneda: "ARS", venceEn: "2026-06-15T00:00:00.000Z" }, // vencido
     { id: "hon2", tenantId: "estudio", creadoEn: HOY, contactoId: "com2", estado: "pendiente", monto: 120_000, moneda: "ARS", venceEn: "2026-10-01T00:00:00.000Z" },
+    { id: "hon3", tenantId: "estudio", creadoEn: HOY, contactoId: "com1", estado: "pendiente", monto: 90_000, moneda: "ARS", venceEn: "2026-08-29T00:00:00.000Z" }, // por vencer → cobranza preventiva
   ],
   audiencias: [
-    { id: "aud1", tenantId: "estudio", creadoEn: HOY, tipo: "audiencia", titulo: "Audiencia preliminar — Expte. 1234/25", inicia: "2026-08-20T00:00:00.000Z", refEntidad: { tipo: "expediente", id: "exp1234" } }, // plazo pasado
+    { id: "aud1", tenantId: "estudio", creadoEn: HOY, tipo: "audiencia", titulo: "Audiencia preliminar — Expte. 1234/25", inicia: "2026-08-20T00:00:00.000Z", refEntidad: { tipo: "expediente", id: "exp1234" } }, // plazo pasado, con escrito de respaldo
     { id: "aud2", tenantId: "estudio", creadoEn: HOY, tipo: "plazo", titulo: "Vencimiento traslado — Expte. 5678/25", inicia: "2026-11-01T00:00:00.000Z" },
+    { id: "aud3", tenantId: "estudio", creadoEn: HOY, tipo: "plazo", titulo: "Plazo apelación — Expte. 9012/25", inicia: "2026-08-28T00:00:00.000Z", refEntidad: { tipo: "expediente", id: "exp9012" } }, // próximo, SIN escrito → compliance crítico
   ],
   escritos: [
     { id: "esc1", tenantId: "estudio", creadoEn: HOY, tipo: "escrito", titulo: "Contestación de demanda — Expte. 1234/25", refEntidad: { tipo: "expediente", id: "exp1234" } },

@@ -1,7 +1,7 @@
 import type {
-  CanastaContacto, CatalogoItem, Cobro, Compra, Contacto, Evento, EvidenciaMercado, Existencia,
-  Interaccion, Oportunidad, ParComplementario, ProviderRegistry, ResumenContacto, ResumenItem,
-  Tarea, TenantCtx,
+  CanastaContacto, CatalogoItem, Cobro, Compra, Contacto, Empleado, Evento, EvidenciaMercado, Existencia,
+  Interaccion, Oportunidad, ParComplementario, ProviderRegistry, RespuestaFeedback, ResumenContacto,
+  ResumenItem, SenalExterna, Tarea, TenantCtx,
 } from "@agent-core/contracts";
 
 // Dataset de referencia por tenant. El tenant "demo" tiene datos; los demás, nada
@@ -22,6 +22,9 @@ interface DatosTenant {
   mercado: EvidenciaMercado[];
   entregas: Tarea[];
   procesos: Tarea[];
+  senales: SenalExterna[];
+  feedbacks: RespuestaFeedback[];
+  empleados: Empleado[];
 }
 
 const HOY = "2026-08-25T12:00:00.000Z";
@@ -53,6 +56,8 @@ const DEMO: DatosTenant = {
   cobros: [
     { id: "cob1", tenantId: "demo", creadoEn: HOY, contactoId: "c1", estado: "vencido", monto: 150_000, moneda: "ARS", venceEn: "2026-07-01T00:00:00.000Z" },
     { id: "cob2", tenantId: "demo", creadoEn: HOY, contactoId: "c2", estado: "pendiente", monto: 5_000, moneda: "ARS", venceEn: "2026-12-01T00:00:00.000Z" },
+    // Por vencer en 2 días → lo toma Cobranza preventiva (no Cobros, que es vencido).
+    { id: "cob3", tenantId: "demo", creadoEn: HOY, contactoId: "c2", estado: "pendiente", monto: 20_000, moneda: "ARS", venceEn: "2026-08-27T00:00:00.000Z" },
   ],
   eventos: [
     { id: "ev1", tenantId: "demo", creadoEn: HOY, tipo: "vencimiento", titulo: "Vencimiento AFIP", inicia: "2026-08-20T00:00:00.000Z" },
@@ -88,13 +93,31 @@ const DEMO: DatosTenant = {
     { id: "proc1", tenantId: "demo", creadoEn: HOY, tipo: "faena", titulo: "Faena lote A", estado: "en_progreso", venceEn: "2026-08-24T00:00:00.000Z" }, // demorado
     { id: "proc2", tenantId: "demo", creadoEn: HOY, tipo: "mantenimiento", titulo: "Service equipo 3", estado: "pendiente", venceEn: "2026-09-10T00:00:00.000Z" },
   ],
+  senales: [
+    // Referido fuerte, no está en la base → prospecto top.
+    { id: "s1", tenantId: "demo", creadoEn: HOY, fuente: "referido", nombre: "Carla Núñez", clave: "carla@nuevo.com", motivo: "la recomendó Ana", observadoEn: HOY },
+    // Ana YA es contacto (email en la base a través del referido) → se descarta si coincide;
+    // acá usamos una clave que sí está para probar el dedup contra la base.
+    { id: "s2", tenantId: "demo", creadoEn: HOY, fuente: "marketplace", nombre: "Diego R.", clave: "diego@shop.com", score: 70, observadoEn: HOY },
+    // Señal web floja → cae por debajo de la confianza mínima.
+    { id: "s3", tenantId: "demo", creadoEn: HOY, fuente: "web", nombre: "Anónimo", clave: "anon@web.com", observadoEn: HOY },
+  ],
+  feedbacks: [
+    { id: "fb1", tenantId: "demo", creadoEn: HOY, contactoId: "c1", puntaje: 10, tipo: "nps", respondidoEn: HOY }, // promotor
+    { id: "fb2", tenantId: "demo", creadoEn: HOY, contactoId: "c2", puntaje: 8, tipo: "nps", respondidoEn: HOY },  // pasivo
+    { id: "fb3", tenantId: "demo", creadoEn: HOY, contactoId: "c2", puntaje: 3, tipo: "nps", comentario: "el mate llegó roto", respondidoEn: HOY }, // detractor
+  ],
+  empleados: [
+    { id: "emp1", tenantId: "demo", creadoEn: "2026-06-01T00:00:00.000Z", nombre: "Lucía", rol: "Vendedora", estado: "activo", finPeriodoPrueba: "2026-09-01T00:00:00.000Z" }, // prueba por vencer
+    { id: "emp2", tenantId: "demo", creadoEn: "2025-01-01T00:00:00.000Z", nombre: "Marcos", rol: "Depósito", estado: "activo", proximaRevision: "2026-08-01T00:00:00.000Z" }, // revisión vencida
+  ],
 };
 
 const DATOS: Record<string, DatosTenant> = { demo: DEMO };
 const vacio: DatosTenant = {
   contactos: [], interacciones: [], resumenContactos: [], pares: [], canastas: [],
   rentabilidad: [], cobros: [], eventos: [], existencias: [], compras: [], oportunidades: [],
-  catalogo: [], mercado: [], entregas: [], procesos: [],
+  catalogo: [], mercado: [], entregas: [], procesos: [], senales: [], feedbacks: [], empleados: [],
 };
 const datos = (ctx: TenantCtx): DatosTenant => DATOS[ctx.tenantId] ?? vacio;
 
@@ -161,6 +184,15 @@ export function crearProviders(): ProviderRegistry {
     },
     production: {
       async processes(ctx) { return { items: datos(ctx).procesos }; },
+    },
+    externalSources: {
+      async prospects(ctx) { return { items: datos(ctx).senales }; },
+    },
+    feedback: {
+      async responses(ctx) { return { items: datos(ctx).feedbacks }; },
+    },
+    staff: {
+      async list(ctx) { return { items: datos(ctx).empleados }; },
     },
   };
 }

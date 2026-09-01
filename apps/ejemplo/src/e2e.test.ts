@@ -15,15 +15,15 @@ describe("smoke end-to-end (adapter de referencia)", () => {
     const capacidades = capacidadesDeProviders(app.providers);
     expect(new Set(capacidades)).toEqual(new Set([
       "contacts", "transactions", "catalog", "receivables", "agenda", "inventory", "suppliers", "pipeline",
-      "competition", "logistics", "production",
+      "competition", "logistics", "production", "external-sources", "feedback", "staff",
     ]));
 
     const activables = manifestsActivables(catalogo, { capacidades, modeloNegocio: app.modeloNegocio })
       .map((a) => a.manifest.id);
     expect(new Set(activables)).toEqual(new Set([
       "tareas", "whatsapp", "crm", "oportunidades", "rentabilidad", "cobros", "agenda", "inventario",
-      "morosidad", "flujo_caja", "seguimiento", "riesgo_abandono", "competencia", "precios",
-      "compras", "logistica", "produccion", "postventa", "ventas",
+      "morosidad", "cobranza_preventiva", "flujo_caja", "seguimiento", "riesgo_abandono", "competencia", "precios",
+      "compras", "logistica", "produccion", "postventa", "ventas", "prospeccion", "nps", "rrhh",
       "analista", "ceo", "jefe",
     ]));
   });
@@ -44,7 +44,8 @@ describe("smoke end-to-end (adapter de referencia)", () => {
       "reactivacion", "venta_cruzada", "margen_bajo", "inmovilizado", "atencion_pedido", "atencion_reclamo",
       "cobro_vencido", "vencimiento", "reponer", "mora_media", "flujo_negativo",
       "seguimiento", "churn_perdido", "competencia_por_encima", "ajuste_precio",
-      "comprar", "entrega", "proceso", "postventa_resena", "venta",
+      "comprar", "entrega", "proceso", "postventa_resena", "venta", "prospecto", "cobro_por_vencer",
+      "reputacion_detractor", "fin_periodo_prueba", "revision_desempeno",
     ]));
     expect(items.every((r) => r.tenantId === "demo" && !!r.id && !!r.creadoEn)).toBe(true);
   });

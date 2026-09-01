@@ -106,3 +106,48 @@ export interface Compra extends CanonicalEntity {
   moneda?: string;
   fecha?: ISODateTime;
 }
+
+/**
+ * Señal externa: prospecto/lead descubierto FUERA de la base (directorio, referido,
+ * marketplace, web). Es un contacto *potencial*, todavía no un `Contacto`. La
+ * capacidad `external-sources` la aporta; el agente Prospección la prioriza por
+ * encaje y descarta las que ya existen en la base (dedup por `clave`).
+ */
+export interface SenalExterna extends CanonicalEntity {
+  fuente: string;              // de dónde salió (directorio, referido, marketplace, web…)
+  nombre: string;              // nombre del prospecto
+  /** Identificador de deduplicación contra la base (email / teléfono / CUIT). */
+  clave?: string;
+  /** Señal de intención o motivo de encaje (texto libre de la fuente). */
+  motivo?: string;
+  /** Encaje declarado por la fuente, 0..100 (opcional). */
+  score?: number;
+  observadoEn: ISODateTime;
+  refEntidad?: EntityRef;
+}
+
+/**
+ * Respuesta de satisfacción (NPS / CSAT / reseña). Capacidad: `feedback`.
+ * `puntaje` en escala 0..10 (NPS) por defecto; `escala` documenta el máximo si difiere.
+ */
+export interface RespuestaFeedback extends CanonicalEntity {
+  contactoId?: ID;
+  puntaje: number;             // 0..escala (NPS: 0..10)
+  escala?: number;             // máximo de la escala (default 10)
+  tipo?: string;               // "nps" | "csat" | "resena" | …
+  comentario?: string;
+  canal?: string;
+  respondidoEn: ISODateTime;
+}
+
+/** Persona del equipo. Capacidad: `staff` (RRHH). Fechas clave opcionales. */
+export interface Empleado extends CanonicalEntity {
+  nombre: string;
+  rol?: string;
+  estado?: string;             // "activo" | "licencia" | "baja" | …
+  ingreso?: ISODateTime;
+  /** Fin del período de prueba (a confirmar o desvincular). */
+  finPeriodoPrueba?: ISODateTime;
+  /** Próxima revisión de desempeño programada. */
+  proximaRevision?: ISODateTime;
+}
