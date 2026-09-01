@@ -15,7 +15,7 @@ describe("smoke end-to-end (adapter de referencia)", () => {
     const capacidades = capacidadesDeProviders(app.providers);
     expect(new Set(capacidades)).toEqual(new Set([
       "contacts", "transactions", "catalog", "receivables", "agenda", "inventory", "suppliers", "pipeline",
-      "competition", "logistics", "production", "external-sources", "feedback", "staff",
+      "competition", "logistics", "production", "external-sources", "feedback", "staff", "incidents",
     ]));
 
     const activables = manifestsActivables(catalogo, { capacidades, modeloNegocio: app.modeloNegocio })
@@ -23,7 +23,7 @@ describe("smoke end-to-end (adapter de referencia)", () => {
     expect(new Set(activables)).toEqual(new Set([
       "tareas", "whatsapp", "crm", "oportunidades", "rentabilidad", "cobros", "agenda", "inventario",
       "morosidad", "cobranza_preventiva", "flujo_caja", "seguimiento", "riesgo_abandono", "competencia", "precios",
-      "compras", "logistica", "produccion", "postventa", "ventas", "prospeccion", "nps", "rrhh",
+      "compras", "logistica", "produccion", "postventa", "ventas", "prospeccion", "nps", "rrhh", "sistemas",
       "analista", "ceo", "jefe",
     ]));
   });
@@ -45,7 +45,7 @@ describe("smoke end-to-end (adapter de referencia)", () => {
       "cobro_vencido", "vencimiento", "reponer", "mora_media", "flujo_negativo",
       "seguimiento", "churn_perdido", "competencia_por_encima", "ajuste_precio",
       "comprar", "entrega", "proceso", "postventa_resena", "venta", "prospecto", "cobro_por_vencer",
-      "reputacion_detractor", "fin_periodo_prueba", "revision_desempeno",
+      "reputacion_detractor", "fin_periodo_prueba", "revision_desempeno", "incidente",
     ]));
     expect(items.every((r) => r.tenantId === "demo" && !!r.id && !!r.creadoEn)).toBe(true);
   });

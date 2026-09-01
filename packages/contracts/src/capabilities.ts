@@ -21,4 +21,5 @@ export type CapabilityId =
   | "logistics"     // envíos / entregas
   | "external-sources" // prospectos / señales de fuentes externas (directorios, referidos, web)
   | "feedback"      // respuestas de satisfacción / NPS / reseñas
-  | "staff";        // personal / empleados (RRHH)
+  | "staff"         // personal / empleados (RRHH)
+  | "incidents";    // errores / incidentes de software (observabilidad, CI)

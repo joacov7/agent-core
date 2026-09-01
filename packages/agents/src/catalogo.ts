@@ -17,6 +17,7 @@ import { agentePrecios } from "./agentes/precios/index.js";
 import { agenteCompras } from "./agentes/compras/index.js";
 import { agenteLogistica } from "./agentes/logistica/index.js";
 import { agenteProduccion } from "./agentes/produccion/index.js";
+import { agenteSistemas } from "./agentes/sistemas/index.js";
 import { agenteCompliance } from "./agentes/compliance/index.js";
 import { agentePostventa } from "./agentes/postventa/index.js";
 import { agenteVentas } from "./agentes/ventas/index.js";
@@ -58,6 +59,7 @@ export const catalogo: Agent[] = [
   agenteCompras,
   agenteLogistica,
   agenteProduccion,
+  agenteSistemas,
   agenteCompliance,
   agentePostventa,
   agenteVentas,

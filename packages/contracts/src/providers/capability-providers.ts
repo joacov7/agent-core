@@ -12,7 +12,7 @@ import type { Tarea } from "../canonical/tarea.js";
 import type {
   Transaccion, Cobro, Oportunidad, Evento, Documento,
   CatalogoItem, Existencia, EvidenciaMercado, Compra, SenalExterna,
-  RespuestaFeedback, Empleado,
+  RespuestaFeedback, Empleado, Incidente,
 } from "../canonical/opcionales.js";
 import type {
   ResumenContacto, ParComplementario, CanastaContacto, ResumenItem,
@@ -129,4 +129,10 @@ export interface FeedbackProvider {
 /** Personal / empleados. RRHH. */
 export interface StaffProvider {
   list(ctx: TenantCtx, query?: ListQuery): Promise<Page<Empleado>>;
+}
+
+/* ── incidents ────────────────────────────────────────────────────────────── */
+/** Incidentes/errores de software (observabilidad, CI). Sistemas (triage). */
+export interface IncidentsProvider {
+  open(ctx: TenantCtx, query?: ListQuery): Promise<Page<Incidente>>;
 }

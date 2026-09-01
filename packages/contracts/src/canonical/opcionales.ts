@@ -151,3 +151,23 @@ export interface Empleado extends CanonicalEntity {
   /** Próxima revisión de desempeño programada. */
   proximaRevision?: ISODateTime;
 }
+
+/**
+ * Incidente de software: un grupo de errores/fallas con una firma común (agrupa
+ * ocurrencias). Capacidad: `incidents`. Lo llena el adapter desde observabilidad
+ * (Sentry, logs) o el CI. El agente Sistemas lo prioriza para triage.
+ */
+export interface Incidente extends CanonicalEntity {
+  /** Firma/fingerprint que agrupa ocurrencias del mismo error. */
+  firma: string;
+  titulo: string;
+  servicio?: string;
+  entorno?: string;            // "produccion" | "staging" | …
+  nivel?: string;              // "fatal" | "error" | "warning" | …
+  ocurrencias: number;
+  usuariosAfectados?: number;
+  primeraVez?: ISODateTime;
+  ultimaVez?: ISODateTime;
+  estado?: string;             // "abierto" | "resuelto" | "ignorado" | …
+  stacktrace?: string;
+}

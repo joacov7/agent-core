@@ -19,6 +19,7 @@ const MAPA_CAPACIDAD: Record<string, CapabilityId> = {
   externalSources: "external-sources",
   feedback: "feedback",
   staff: "staff",
+  incidents: "incidents",
 };
 
 /**
