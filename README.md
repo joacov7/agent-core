@@ -49,6 +49,11 @@ apps/
   paridad. **Engine funcional**:
   - `runAgent`: falla cerrado sin `TenantCtx`, activa por manifest (capacidades
     derivadas de los providers + modelo de negocio) y persiste las recomendaciones.
+  - `resolverSeleccion` / `runSeleccion`: capa de selección por tenant. Combina la
+    activación (qué está DISPONIBLE) con la config guardada (`CoreStore.agentConfig`:
+    qué está ENCENDIDO, con qué autonomía y en qué plan) y corre solo los agentes
+    encendidos, con la autonomía efectiva acotada al máximo del manifest. Fail-closed:
+    sin config, `pordefecto: "apagado"`.
   - `evaluarEscritura`: enforcement que intercepta toda tool de escritura
     (bloqueo por memoria + policies: límites, horarios, entidades protegidas, precio, autonomía).
   - `ejecutarAccion`: paso Acción → Resultado, con el gate del enforcement y
@@ -92,10 +97,10 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**308 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
-enforcement, ejecución, memoria, impacto) + AI gateway (presupuesto/atribución) +
-los 28 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
-y marketplace).
+**318 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
+(presupuesto/atribución) + los 28 agentes del catálogo + smoke end-to-end de **tres**
+adapters (retail, jurídico y marketplace).
 
 ## Principios
 
