@@ -1,8 +1,8 @@
 {
   "name": "@agent-core/core",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Engine, recommendations, policies, jefe-gabinete, resultados, memoria y ai-gateway. El motor.",
+  "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,12 +12,25 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "sideEffects": false,
+  "files": ["dist", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joacov7/agent-core.git",
+    "directory": "packages/agent-core"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
   "scripts": {
     "build": "tsc --build",
-    "clean": "tsc --build --clean"
+    "clean": "tsc --build --clean",
+    "prepublishOnly": "tsc --build"
   },
   "dependencies": {
-    "@agent-core/contracts": "*"
+    "@agent-core/contracts": "^0.1.0"
   }
 }

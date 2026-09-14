@@ -1,8 +1,8 @@
 {
-  "name": "@agent-core/app-juridico",
+  "name": "@agent-core/app-marketplace",
   "version": "0.0.0",
   "private": true,
-  "description": "Segundo adapter de referencia: estudio jurídico (cadencia proyecto). Prueba de reutilización del Core.",
+  "description": "Tercer adapter de referencia: marketplace de dos lados (cadencia transaccional_repetitivo, tenant por vendedor). Plantilla de arranque.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

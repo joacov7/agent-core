@@ -1,8 +1,8 @@
 {
   "name": "@agent-core/contracts",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Tipos canónicos + interfaces de providers + tipo Manifest. Sin lógica; lo importan todos.",
+  "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,9 +12,22 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "sideEffects": false,
+  "files": ["dist", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joacov7/agent-core.git",
+    "directory": "packages/contracts"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
   "scripts": {
     "build": "tsc --build",
-    "clean": "tsc --build --clean"
+    "clean": "tsc --build --clean",
+    "prepublishOnly": "tsc --build"
   }
 }
