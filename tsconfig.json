@@ -5,6 +5,7 @@
     { "path": "./packages/agent-core" },
     { "path": "./packages/agents" },
     { "path": "./apps/ejemplo" },
-    { "path": "./apps/juridico" }
+    { "path": "./apps/juridico" },
+    { "path": "./apps/marketplace" }
   ]
 }

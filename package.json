@@ -13,7 +13,8 @@
     "packages/agent-core",
     "packages/agents",
     "apps/ejemplo",
-    "apps/juridico"
+    "apps/juridico",
+    "apps/marketplace"
   ],
   "scripts": {
     "build": "tsc --build",
