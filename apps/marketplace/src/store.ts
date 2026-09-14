@@ -1,5 +1,6 @@
 import type {
-  CoreStore, EntradaMemoria, GastoIA, GastoStore, Impacto, Recomendacion, ResultadoAccion, TenantCtx,
+  AgenteConfig, AgentConfigStore, CoreStore, EntradaMemoria, GastoIA, GastoStore, Impacto,
+  Recomendacion, ResultadoAccion, TenantCtx,
 } from "@agent-core/contracts";
 
 /**
@@ -9,11 +10,13 @@ import type {
  */
 export interface CoreStoreEnMemoria extends CoreStore {
   gastoIA: GastoStore;
+  agentConfig: AgentConfigStore;
   readonly _recos: Recomendacion[];
   readonly _results: ResultadoAccion[];
   readonly _impacts: Impacto[];
   readonly _mem: EntradaMemoria[];
   readonly _gasto: GastoIA[];
+  readonly _agentCfgs: AgenteConfig[];
 }
 
 export function crearCoreStore(): CoreStoreEnMemoria {
@@ -22,11 +25,12 @@ export function crearCoreStore(): CoreStoreEnMemoria {
   const impacts: Impacto[] = [];
   const mem: EntradaMemoria[] = [];
   const gasto: GastoIA[] = [];
+  const agentCfgs: AgenteConfig[] = [];
   const delTenant = <T extends { tenantId: string }>(rows: T[], ctx: TenantCtx) =>
     rows.filter((r) => r.tenantId === ctx.tenantId);
 
   return {
-    _recos: recos, _results: results, _impacts: impacts, _mem: mem, _gasto: gasto,
+    _recos: recos, _results: results, _impacts: impacts, _mem: mem, _gasto: gasto, _agentCfgs: agentCfgs,
     recommendations: {
       async save(_ctx, r) { recos.push(r); return r; },
       async get(ctx, id) { return delTenant(recos, ctx).find((r) => r.id === id) ?? null; },
@@ -55,6 +59,18 @@ export function crearCoreStore(): CoreStoreEnMemoria {
       async totalPorTenant(ctx) { return delTenant(gasto, ctx).reduce((s, g) => s + g.costo, 0); },
       async totalPorAgente(ctx, agentId) {
         return delTenant(gasto, ctx).filter((g) => g.agentId === agentId).reduce((s, g) => s + g.costo, 0);
+      },
+    },
+    agentConfig: {
+      async list(ctx) { return delTenant(agentCfgs, ctx); },
+      async get(ctx, agentId) {
+        return delTenant(agentCfgs, ctx).find((c) => c.agentId === agentId) ?? null;
+      },
+      async set(ctx, cfg) {
+        const full: AgenteConfig = { ...cfg, tenantId: ctx.tenantId, actualizadoEn: new Date().toISOString() };
+        const i = agentCfgs.findIndex((c) => c.tenantId === ctx.tenantId && c.agentId === cfg.agentId);
+        if (i >= 0) agentCfgs[i] = full; else agentCfgs.push(full);
+        return full;
       },
     },
   };
