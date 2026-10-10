@@ -1,0 +1,47 @@
+# @agent-core/web — app SaaS (Next.js)
+
+Esqueleto del producto: Next.js (App Router) sobre `agent-core`. Expone la **API** de
+agentes y un **panel** que corre la capa de servicio en el servidor.
+
+> **No es un workspace del monorepo root** (así no toca el CI `tsc --build` + vitest,
+> que corre sin frameworks ni DB). Usa deps `file:` a los paquetes locales. Se instala
+> y corre aparte, desde esta carpeta. La **capa de servicio** (`src/lib/service.ts`)
+> sí se testea en el vitest de la raíz.
+
+## Correr en DEV (sin claves, sin DB)
+Usa el adapter de referencia in-memory (retail), así ves la API funcionando ya:
+
+```bash
+cd apps/web
+npm install          # instala Next + React + los paquetes @agent-core/* (file:)
+cp .env.example .env
+npm run dev          # http://localhost:3000
+```
+
+- **Panel** (`/`): estado real del equipo de agentes del tenant.
+- **API**:
+  - `GET  /api/agents` → agentes con disponibilidad + config del tenant.
+  - `PUT  /api/agents` → encender/apagar/ajustar un agente (`AgenteConfigInput`).
+  - `POST /api/run` → corre los agentes **encendidos** y devuelve lo ejecutado.
+
+El tenant sale de `resolveTenant()` (header `x-tenant-id` o `DEV_TENANT`).
+
+## Pasar a PRODUCCIÓN
+1. **Persistencia real** — en `src/lib/app.ts`, reemplazá el adapter in-memory por el
+   store Prisma + tus providers:
+   ```ts
+   import { PrismaClient } from "@prisma/client";
+   import { crearCoreStorePrisma } from "@agent-core/store-prisma";
+   const store = crearCoreStorePrisma(new PrismaClient());
+   const providers = crearTusProviders();          // adapters de tu dominio → canónico
+   export const servicio = crearServicio({ store, providers, modeloNegocio: "transaccional_repetitivo" });
+   ```
+   Migrá la DB con el schema de `@agent-core/store-prisma` (`prisma/schema.prisma`).
+2. **Auth (Clerk)** — en `src/lib/tenant.ts`, reemplazá el stub por el `orgId` de la
+   sesión (`auth()` de `@clerk/nextjs/server`) y agregá `clerkMiddleware` en
+   `src/middleware.ts`. Seteá `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY`.
+3. **Consola** — apuntá la consola visual a `GET/PUT /api/agents` en vez de localStorage.
+
+## Capas
+`page/route (Next)` → `resolveTenant` + `servicio` → `@agent-core/core` (`runSeleccion`,
+activación, selección) → `CoreStore` (in-memory en dev, Prisma en prod) + providers.
