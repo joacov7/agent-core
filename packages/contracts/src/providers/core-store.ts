@@ -5,6 +5,7 @@ import type { Recomendacion } from "../canonical/recomendacion.js";
 import type { ResultadoAccion, Impacto } from "../canonical/ciclo.js";
 import type { EntradaMemoria } from "../canonical/memoria.js";
 import type { GastoIA } from "../canonical/gasto.js";
+import type { AgenteConfig, AgenteConfigInput } from "../canonical/agente-config.js";
 
 /**
  * Almacén de las tablas PROPIAS del Core (recommendations, action_results,
@@ -49,6 +50,17 @@ export interface MemoryStore {
   list(ctx: TenantCtx, query?: ListQuery): Promise<Page<EntradaMemoria>>;
 }
 
+/**
+ * Config por tenant de los agentes (tabla del Core: `agent_config`). Guarda qué
+ * agentes están encendidos, con qué autonomía y en qué plan. `set` hace upsert por
+ * `(ctx.tenantId, agentId)`. Aislamiento por tenant como el resto.
+ */
+export interface AgentConfigStore {
+  list(ctx: TenantCtx): Promise<AgenteConfig[]>;
+  get(ctx: TenantCtx, agentId: string): Promise<AgenteConfig | null>;
+  set(ctx: TenantCtx, cfg: AgenteConfigInput): Promise<AgenteConfig>;
+}
+
 export interface CoreStore {
   recommendations: RecommendationStore;
   actionResults: ActionResultStore;
@@ -56,4 +68,6 @@ export interface CoreStore {
   memory: MemoryStore;
   /** Opcional: presente solo si el deployment persiste/atribuye gasto de IA. */
   gastoIA?: GastoStore;
+  /** Opcional: presente solo si el deployment persiste la selección de agentes por tenant. */
+  agentConfig?: AgentConfigStore;
 }
