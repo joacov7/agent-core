@@ -3,20 +3,27 @@
 Esqueleto del producto: Next.js (App Router) sobre `agent-core`. Expone la **API** de
 agentes y un **panel** que corre la capa de servicio en el servidor.
 
-> **No es un workspace del monorepo root** (así no toca el CI `tsc --build` + vitest,
-> que corre sin frameworks ni DB). Usa deps `file:` a los paquetes locales. Se instala
-> y corre aparte, desde esta carpeta. La **capa de servicio** (`src/lib/service.ts`)
-> sí se testea en el vitest de la raíz.
+> Es **workspace del monorepo** (resuelve `@agent-core/*` por symlink), pero se corre
+> aparte con `npm run dev`. El CI de la raíz (`tsc --build` + vitest) no la compila —
+> `next build` es su propio paso. La **capa de servicio** (`src/lib/service.ts`) sí se
+> testea en el vitest de la raíz.
 
 ## Correr en DEV (sin claves, sin DB)
-Usa el adapter de referencia in-memory (retail), así ves la API funcionando ya:
+Usa el adapter de referencia in-memory (retail), así ves todo funcionando ya:
 
 ```bash
+# 1. desde la raíz del repo: instala todo y compila los paquetes (genera dist/)
+npm install
+npm run build
+
+# 2. levantá la app
 cd apps/web
-npm install          # instala Next + React + los paquetes @agent-core/* (file:)
 cp .env.example .env
 npm run dev          # http://localhost:3000
 ```
+
+> El paso `npm run build` de la raíz es necesario la primera vez (y tras tocar un
+> paquete `@agent-core/*`): la app importa su `dist/`.
 
 - **Panel** (`/`): estado real del equipo de agentes del tenant.
 - **Consola** (`/consola`): página cliente que consume la API — encendés/apagás agentes,

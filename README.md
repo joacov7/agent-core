@@ -26,7 +26,7 @@ apps/
   ejemplo/       @agent-core/app-ejemplo      adapter de referencia in-memory (retail) + smoke e2e
   juridico/      @agent-core/app-juridico     segundo adapter (estudio jurídico, cadencia proyecto)
   marketplace/   @agent-core/app-marketplace  tercer adapter (marketplace de dos lados, tenant por vendedor)
-  web/           @agent-core/web              app SaaS (Next.js): API de agentes + panel (standalone, no workspace)
+  web/           @agent-core/web              app SaaS (Next.js): API + consola + bandeja (se corre con `npm run dev`)
 ```
 
 > **Prueba de reutilización (tres rubros, cero cambios de agente):**
