@@ -1,0 +1,32 @@
+{
+  "name": "@agent-core/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "App SaaS (Next.js) sobre agent-core: API de agentes + panel. NO es workspace del root (deps file: a los paquetes locales); se instala y corre aparte.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-core/contracts": "file:../../packages/contracts",
+    "@agent-core/core": "file:../../packages/agent-core",
+    "@agent-core/agents": "file:../../packages/agents",
+    "@agent-core/store-prisma": "file:../../packages/store-prisma",
+    "@agent-core/app-ejemplo": "file:../../apps/ejemplo",
+    "@clerk/nextjs": "^6.0.0",
+    "@prisma/client": "^5.20.0",
+    "next": "^15.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "prisma": "^5.20.0",
+    "typescript": "^5.6.0"
+  }
+}

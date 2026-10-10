@@ -26,6 +26,7 @@ apps/
   ejemplo/       @agent-core/app-ejemplo      adapter de referencia in-memory (retail) + smoke e2e
   juridico/      @agent-core/app-juridico     segundo adapter (estudio jurídico, cadencia proyecto)
   marketplace/   @agent-core/app-marketplace  tercer adapter (marketplace de dos lados, tenant por vendedor)
+  web/           @agent-core/web              app SaaS (Next.js): API de agentes + panel (standalone, no workspace)
 ```
 
 > **Prueba de reutilización (tres rubros, cero cambios de agente):**
@@ -98,10 +99,11 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**324 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**327 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
-(presupuesto/atribución) + adapter de persistencia Prisma + los 28 agentes del
-catálogo + smoke end-to-end de **tres** adapters (retail, jurídico y marketplace).
+(presupuesto/atribución) + adapter de persistencia Prisma + capa de servicio del SaaS
++ los 28 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
+y marketplace).
 
 ## Principios
 
