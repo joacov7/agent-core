@@ -17,6 +17,9 @@ export default async function Home() {
         Tenant <b>{ctx.tenantId}</b> · {disponibles.length} de {agentes.length} agentes disponibles según las
         capacidades del adapter. Configuralos vía <code>PUT /api/agents</code> y corralos con <code>POST /api/run</code>.
       </p>
+      <p style={{ marginTop: 4 }}>
+        <a href="/consola" style={{ color: "#2bb8ab", fontWeight: 600 }}>→ Abrir la consola (configurar y correr en vivo)</a>
+      </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 10, marginTop: 24 }}>
         {agentes.map((a) => (
