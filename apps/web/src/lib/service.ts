@@ -1,6 +1,6 @@
 import type {
   AgentManifest, AgenteConfig, AgenteConfigInput, AutonomyMode, BusinessModel,
-  CoreStore, ProviderRegistry, TenantCtx,
+  CoreStore, ProviderRegistry, Recomendacion, TenantCtx,
 } from "@agent-core/contracts";
 import {
   capacidadesDeProviders, manifestsActivables, runSeleccion,
@@ -33,6 +33,8 @@ export interface Servicio {
   listarAgentes(ctx: TenantCtx): Promise<AgenteVista[]>;
   setAgente(ctx: TenantCtx, cfg: AgenteConfigInput): Promise<AgenteConfig>;
   correr(ctx: TenantCtx): Promise<RunSeleccionResult>;
+  /** Bandeja: las recomendaciones persistidas del tenant, de mayor a menor prioridad. */
+  listarRecomendaciones(ctx: TenantCtx): Promise<Recomendacion[]>;
 }
 
 export function crearServicio(deps: ServicioDeps): Servicio {
@@ -69,6 +71,15 @@ export function crearServicio(deps: ServicioDeps): Servicio {
         catalogo, ctx, providers, store,
         ...(modeloNegocio ? { modeloNegocio } : {}),
       });
+    },
+
+    async listarRecomendaciones(ctx) {
+      const { items } = await store.recommendations.list(ctx);
+      // Ordena por prioridad (1 = máxima) y, a igualdad, por severidad.
+      const peso: Record<string, number> = { critica: 0, importante: 1, oportunidad: 2 };
+      return [...items].sort(
+        (a, b) => a.prioridad - b.prioridad || (peso[a.severidad] ?? 9) - (peso[b.severidad] ?? 9),
+      );
     },
   };
 }

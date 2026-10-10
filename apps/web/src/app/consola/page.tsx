@@ -80,7 +80,8 @@ export default function ConsolaPage() {
       <h1 style={{ fontSize: 32, margin: "6px 0 4px", letterSpacing: "-.02em" }}>Consola de Agentes</h1>
       <p style={{ color: C.soft, marginTop: 0 }}>
         Conectada a la API: <code>GET/PUT /api/agents</code> · <code>POST /api/run</code>. Los cambios se persisten
-        en el <code>CoreStore</code> del tenant.
+        en el <code>CoreStore</code> del tenant. Las recomendaciones que genera aparecen en la{" "}
+        <a href="/bandeja" style={{ color: C.accentInk }}>bandeja</a>.
       </p>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", margin: "16px 0 24px" }}>
