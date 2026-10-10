@@ -1,0 +1,92 @@
+// Modelo de datos del Core para Postgres (Prisma).
+//   npx prisma migrate dev     (crea/aplica migraciones)
+//   npx prisma generate        (genera el cliente)
+// Patrón: columnas indexadas para consultar/aislar + una columna `data` (JSON) con
+// el objeto canónico completo. Así el esquema no cambia cuando crecen los tipos del
+// Core, y toda query se filtra por `tenantId` (aislamiento, sección 8).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Recomendacion {
+  id       String   @id
+  tenantId String
+  agentId  String
+  tipo     String
+  estado   String
+  dedupKey String?
+  creadoEn DateTime @default(now())
+  data     Json
+
+  @@index([tenantId])
+  @@index([tenantId, dedupKey])
+  @@map("recomendaciones")
+}
+
+model ResultadoAccion {
+  id       String   @id
+  tenantId String
+  accionId String
+  creadoEn DateTime @default(now())
+  data     Json
+
+  @@index([tenantId])
+  @@map("resultados_accion")
+}
+
+model Impacto {
+  id              String   @id
+  tenantId        String
+  recomendacionId String?
+  creadoEn        DateTime @default(now())
+  data            Json
+
+  @@index([tenantId])
+  @@index([tenantId, recomendacionId])
+  @@map("impactos")
+}
+
+model EntradaMemoria {
+  id        String   @id
+  tenantId  String
+  namespace String
+  clave     String
+  creadoEn  DateTime @default(now())
+  data      Json
+
+  @@index([tenantId])
+  @@index([tenantId, namespace, clave])
+  @@map("memory_entries")
+}
+
+model GastoIA {
+  id       String   @id
+  tenantId String
+  agentId  String?
+  costo    Float
+  creadoEn DateTime @default(now())
+  data     Json
+
+  @@index([tenantId])
+  @@index([tenantId, agentId])
+  @@map("gasto_ia")
+}
+
+model AgenteConfig {
+  tenantId      String
+  agentId       String
+  encendido     Boolean
+  autonomia     String
+  plan          String?
+  actualizadoEn DateTime @default(now())
+  data          Json
+
+  @@id([tenantId, agentId])
+  @@map("agent_config")
+}

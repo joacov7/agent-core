@@ -1,0 +1,36 @@
+{
+  "name": "@agent-core/store-prisma",
+  "version": "0.1.0",
+  "description": "Adapter de persistencia del CoreStore sobre Postgres vía Prisma. Mismo contrato que el store in-memory.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": ["dist", "prisma", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joacov7/agent-core.git",
+    "directory": "packages/store-prisma"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "prepublishOnly": "tsc --build"
+  },
+  "dependencies": {
+    "@agent-core/contracts": "^0.1.0"
+  }
+}

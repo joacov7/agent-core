@@ -12,9 +12,10 @@ opcionales + un catálogo de agentes que solo leen capacidades.
 
 ```
 packages/
-  contracts/     @agent-core/contracts  tipos canónicos + interfaces de providers + Manifest (sin lógica)
-  agent-core/    @agent-core/core       engine, recommendations, policies, jefe-gabinete, resultados, memoria, ai-gateway
-  agents/        @agent-core/agents     catálogo de agentes reutilizables (usan solo contracts + core)
+  contracts/     @agent-core/contracts     tipos canónicos + interfaces de providers + Manifest (sin lógica)
+  agent-core/    @agent-core/core          engine, recommendations, policies, jefe-gabinete, resultados, memoria, ai-gateway
+  agents/        @agent-core/agents        catálogo de agentes reutilizables (usan solo contracts + core)
+  store-prisma/  @agent-core/store-prisma  adapter de persistencia del CoreStore sobre Postgres (Prisma)
 ```
 
 Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapters
@@ -97,10 +98,10 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**318 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**324 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
-(presupuesto/atribución) + los 28 agentes del catálogo + smoke end-to-end de **tres**
-adapters (retail, jurídico y marketplace).
+(presupuesto/atribución) + adapter de persistencia Prisma + los 28 agentes del
+catálogo + smoke end-to-end de **tres** adapters (retail, jurídico y marketplace).
 
 ## Principios
 
@@ -140,7 +141,7 @@ npm run publish:all     # publica los 3 paquetes privados
 
 ## Publicación
 
-Los tres paquetes `@agent-core/*` (`contracts`, `core`, `agents`) se publican como
-**privados** (`publishConfig.access: restricted`, `0.1.0`, solo `dist/` + README);
-las apps y la raíz quedan `private`. Detalles, orden y registry (npmjs / GitHub
-Packages) en [`PUBLISHING.md`](./PUBLISHING.md).
+Los paquetes `@agent-core/*` (`contracts`, `core`, `agents`, `store-prisma`) se
+publican como **privados** (`publishConfig.access: restricted`, `0.1.0`, solo `dist/`
++ README); las apps y la raíz quedan `private`. Detalles, orden y registry (npmjs /
+GitHub Packages) en [`PUBLISHING.md`](./PUBLISHING.md).

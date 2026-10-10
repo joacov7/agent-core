@@ -4,6 +4,7 @@
     { "path": "./packages/contracts" },
     { "path": "./packages/agent-core" },
     { "path": "./packages/agents" },
+    { "path": "./packages/store-prisma" },
     { "path": "./apps/ejemplo" },
     { "path": "./apps/juridico" },
     { "path": "./apps/marketplace" }

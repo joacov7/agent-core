@@ -1,22 +1,24 @@
 # Publicación de paquetes
 
-El monorepo publica **tres paquetes privados** (scoped `@agent-core/*`); las apps
-(`apps/ejemplo`, `apps/juridico`) y la raíz quedan `private` y **no** se publican.
+El monorepo publica **cuatro paquetes privados** (scoped `@agent-core/*`); las apps
+(`apps/ejemplo`, `apps/juridico`, `apps/marketplace`) y la raíz quedan `private` y
+**no** se publican.
 
 | Paquete | Rol |
 |---|---|
 | `@agent-core/contracts` | tipos canónicos + interfaces de providers + Manifest |
 | `@agent-core/core` | engine + recommendations + policies + ai-gateway |
 | `@agent-core/agents` | catálogo de agentes |
+| `@agent-core/store-prisma` | adapter de persistencia del CoreStore sobre Postgres |
 
 Todos son `0.1.0`, ESM (`"type": "module"`), publican solo `dist/` + `README.md`
-(campo `files`) y llevan `publishConfig.access: "restricted"` (paquetes privados).
+(`store-prisma` también `prisma/`) y llevan `publishConfig.access: "restricted"`.
 Las dependencias internas están fijadas con rango semver (`^0.1.0`), no `*`.
 
 ## Orden
 
-`contracts` → `core` → `agents` (por sus dependencias). Los scripts de la raíz ya
-respetan ese orden.
+`contracts` → `core` → `agents` → `store-prisma` (por sus dependencias). Los scripts
+de la raíz ya respetan ese orden.
 
 ## Pasos
 
