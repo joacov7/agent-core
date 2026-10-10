@@ -19,6 +19,10 @@ npm run dev          # http://localhost:3000
 ```
 
 - **Panel** (`/`): estado real del equipo de agentes del tenant.
+- **Consola** (`/consola`): página cliente que consume la API — encendés/apagás agentes,
+  ajustás autonomía y plan (persisten vía `PUT /api/agents`) y corrés el equipo
+  (`POST /api/run`). Es la versión "conectada" de la consola visual (same-origin, sin la
+  limitación de CSP del artifact).
 - **API**:
   - `GET  /api/agents` → agentes con disponibilidad + config del tenant.
   - `PUT  /api/agents` → encender/apagar/ajustar un agente (`AgenteConfigInput`).
