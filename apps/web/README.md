@@ -23,10 +23,13 @@ npm run dev          # http://localhost:3000
   ajustás autonomía y plan (persisten vía `PUT /api/agents`) y corrés el equipo
   (`POST /api/run`). Es la versión "conectada" de la consola visual (same-origin, sin la
   limitación de CSP del artifact).
+- **Bandeja** (`/bandeja`): las recomendaciones que generan los agentes, por prioridad,
+  con filtro por severidad y un botón para correr el equipo.
 - **API**:
   - `GET  /api/agents` → agentes con disponibilidad + config del tenant.
   - `PUT  /api/agents` → encender/apagar/ajustar un agente (`AgenteConfigInput`).
   - `POST /api/run` → corre los agentes **encendidos** y devuelve lo ejecutado.
+  - `GET  /api/recommendations` → bandeja del tenant, ordenada por prioridad.
 
 El tenant sale de `resolveTenant()` (header `x-tenant-id` o `DEV_TENANT`).
 

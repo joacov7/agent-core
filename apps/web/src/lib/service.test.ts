@@ -40,4 +40,16 @@ describe("Servicio del SaaS", () => {
     expect(res.ejecutados.map((e) => e.agentId).sort()).toEqual(["cobros", "inventario"]);
     expect(res.recomendaciones.length).toBeGreaterThan(0);
   });
+
+  it("listarRecomendaciones devuelve la bandeja ordenada por prioridad", async () => {
+    const s = servicioDemo();
+    expect(await s.listarRecomendaciones(ctx)).toHaveLength(0); // vacía antes de correr
+    await s.setAgente(ctx, { agentId: "cobros", encendido: true, autonomia: "manual" });
+    await s.correr(ctx);
+    const bandeja = await s.listarRecomendaciones(ctx);
+    expect(bandeja.length).toBeGreaterThan(0);
+    for (let i = 1; i < bandeja.length; i++) {
+      expect(bandeja[i - 1]!.prioridad).toBeLessThanOrEqual(bandeja[i]!.prioridad);
+    }
+  });
 });
