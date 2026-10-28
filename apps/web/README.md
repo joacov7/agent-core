@@ -25,16 +25,19 @@ npm run dev          # http://localhost:3000
 > El paso `npm run build` de la raíz es necesario la primera vez (y tras tocar un
 > paquete `@agent-core/*`): la app importa su `dist/`.
 
-- **Panel** (`/`): estado real del equipo de agentes del tenant.
+- **Equipo** (`/`): tu equipo IA con **cara y nombre** — cada agente es una persona (avatar
+  generado por área, nombre propio, saludo) con su estado en vivo: *descansando*, *al día*,
+  *con novedades* o *espera tu OK*.
 - **Consola** (`/consola`): página cliente que consume la API — encendés/apagás agentes,
-  ajustás autonomía y plan (persisten vía `PUT /api/agents`) y corrés el equipo
+  les ponés **otro nombre** (✎), ajustás autonomía y plan (persisten vía `PUT /api/agents`) y corrés el equipo
   (`POST /api/run`). Es la versión "conectada" de la consola visual (same-origin, sin la
   limitación de CSP del artifact).
-- **Bandeja** (`/bandeja`): las recomendaciones que generan los agentes, por prioridad,
+- **Bandeja** (`/bandeja`): las recomendaciones que generan los agentes (firmadas por su autor), por prioridad,
   con filtro por severidad y un botón para correr el equipo.
 - **API**:
   - `GET  /api/agents` → agentes con disponibilidad + config del tenant.
-  - `PUT  /api/agents` → encender/apagar/ajustar un agente (`AgenteConfigInput`).
+  - `PUT  /api/agents` → encender/apagar/ajustar un agente (`AgenteConfigInput`); `alias` lo
+    renombra (≤40 caracteres → si no, `400`). Sin `alias` en el body se conserva el actual; `""` lo borra.
   - `POST /api/run` → corre los agentes **encendidos** y devuelve lo ejecutado.
   - `GET  /api/recommendations` → bandeja del tenant, ordenada por prioridad.
 
@@ -59,3 +62,8 @@ El tenant sale de `resolveTenant()` (header `x-tenant-id` o `DEV_TENANT`).
 ## Capas
 `page/route (Next)` → `resolveTenant` + `servicio` → `@agent-core/core` (`runSeleccion`,
 activación, selección) → `CoreStore` (in-memory en dev, Prisma en prod) + providers.
+
+## Personas
+El catálogo trae un nombre y un saludo por defecto para cada agente (`personas` en
+`@agent-core/agents`, neutros en género y sin marcas). El tenant los pisa con
+`AgenteConfig.alias`. Es solo presentación: no afecta activación ni enforcement.

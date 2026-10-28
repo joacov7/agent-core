@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Avatar } from "@/components/Avatar";
+import { C } from "@/lib/ui";
 
 type Severidad = "critica" | "importante" | "oportunidad";
 interface Reco {
@@ -9,11 +11,8 @@ interface Reco {
   impactoEstimado?: number | null; refEntidad?: { tipo: string; id: string };
 }
 
-const C = {
-  bg: "#0e1315", surface: "#161d20", surface2: "#1b2327", line: "#2a343a",
-  ink: "#e7ecee", soft: "#a3b0b6", faint: "#6c7c83", accent: "#2bb8ab", accentInk: "#7fd8ce",
-  warn: "#d69a3a", crit: "#e0685a",
-};
+interface Quien { nombre: string; rol: string; categoria: string }
+
 const SEV: Record<Severidad, { label: string; color: string }> = {
   critica: { label: "Crítica", color: C.crit },
   importante: { label: "Importante", color: C.warn },
@@ -23,6 +22,7 @@ const ORDEN: Severidad[] = ["critica", "importante", "oportunidad"];
 
 export default function BandejaPage() {
   const [recos, setRecos] = useState<Reco[]>([]);
+  const [equipo, setEquipo] = useState<Record<string, Quien>>({});
   const [cargando, setCargando] = useState(true);
   const [corriendo, setCorriendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +30,13 @@ export default function BandejaPage() {
 
   async function cargar() {
     try {
-      const r = await fetch("/api/recommendations");
+      const [r, ag] = await Promise.all([fetch("/api/recommendations"), fetch("/api/agents")]);
       if (!r.ok) throw new Error(`GET /api/recommendations → ${r.status}`);
       setRecos(await r.json());
+      if (ag.ok) {
+        const lista = (await ag.json()) as { manifest: { id: string; categoria: string }; persona: { nombre: string; rol: string } }[];
+        setEquipo(Object.fromEntries(lista.map((a) => [a.manifest.id, { nombre: a.persona.nombre, rol: a.persona.rol, categoria: a.manifest.categoria }])));
+      }
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar");
@@ -92,6 +96,13 @@ export default function BandejaPage() {
               border: `1px solid ${C.line}`, borderLeft: `4px solid ${SEV[r.severidad].color}`,
               background: C.surface, borderRadius: 10, padding: "13px 15px",
             }}>
+              {equipo[r.agentId] && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <Avatar nombre={equipo[r.agentId]!.nombre} categoria={equipo[r.agentId]!.categoria} size={26} />
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{equipo[r.agentId]!.nombre}</span>
+                  <span style={{ fontSize: 12, color: C.faint }}>· {equipo[r.agentId]!.rol}</span>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
                 <h3 style={{ margin: 0, fontSize: 15 }}>{r.titulo}</h3>
                 <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: SEV[r.severidad].color, whiteSpace: "nowrap" }}>
@@ -100,8 +111,7 @@ export default function BandejaPage() {
               </div>
               {r.descripcion && <p style={{ margin: "6px 0 0", fontSize: 13, color: C.soft }}>{r.descripcion}</p>}
               <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: C.faint, marginTop: 8, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <span>{r.agentId}</span>
-                <span>· {r.tipo}</span>
+                <span>{r.tipo}</span>
                 <span>· confianza {r.confianza}</span>
                 {r.refEntidad && <span>· {r.refEntidad.tipo}:{r.refEntidad.id}</span>}
                 {r.impactoEstimado != null && <span>· ${r.impactoEstimado.toLocaleString("es-AR")}</span>}
