@@ -7,6 +7,18 @@ export type CategoriaAgente =
   | "direccion" | "finanzas" | "clientes" | "comercial"
   | "comunicacion" | "organizacion" | "operaciones";
 
+/**
+ * Cara visible de un agente: cómo se presenta ante las personas. Es solo
+ * presentación (no afecta activación ni enforcement). El tenant puede pisar `nombre`
+ * con `AgenteConfig.alias`.
+ */
+export interface PersonaAgente {
+  /** Nombre propio por defecto (neutro en género, sin marcas). */
+  nombre: string;
+  /** Cómo se saluda / qué dice que hace, en primera persona. */
+  saludo: string;
+}
+
 export type NivelIA = "ninguno" | "redacta" | "clasifica" | "razona";
 export type CostoEstimado = "cero" | "bajo" | "medio" | "alto";
 export type FrecuenciaRecomendada = "evento" | "diaria" | "semanal" | "manual";

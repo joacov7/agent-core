@@ -17,6 +17,8 @@ export interface AgenteConfig {
   autonomia: AutonomyMode;
   /** Plan comercial en el que se ofrece el agente (Free/Pro/… libre por deployment). */
   plan?: string;
+  /** Nombre propio que el tenant le da al agente (pisa el nombre por defecto de su persona). */
+  alias?: string;
   /** Ajustes específicos del agente (según su `configSchema`). */
   config?: Record<string, unknown>;
   actualizadoEn?: ISODateTime;

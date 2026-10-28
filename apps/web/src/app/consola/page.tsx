@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Avatar } from "@/components/Avatar";
+import { C, CAT_LABEL, CAT_ORDEN, ESTADO, type EstadoAgente, type PersonaVista } from "@/lib/ui";
 
 type Autonomia = "manual" | "assisted" | "autonomous";
 interface Manifest {
@@ -8,23 +10,14 @@ interface Manifest {
   riesgo: string; nivelIA: string;
 }
 interface AgenteVista {
-  manifest: Manifest; disponible: boolean; encendido: boolean; autonomia: Autonomia; plan?: string;
+  manifest: Manifest; persona: PersonaVista; estado: EstadoAgente; novedades: number;
+  disponible: boolean; encendido: boolean; autonomia: Autonomia; plan?: string;
 }
+type Cambios = Partial<{ encendido: boolean; autonomia: Autonomia; plan: string; alias: string }>;
 
 const ORDEN_AUT: Autonomia[] = ["manual", "assisted", "autonomous"];
 const AUT_LABEL: Record<Autonomia, string> = { manual: "Manual", assisted: "Asistido", autonomous: "Autónomo" };
-const CAT_LABEL: Record<string, string> = {
-  direccion: "Dirección", clientes: "Clientes", comercial: "Comercial", finanzas: "Finanzas",
-  operaciones: "Operaciones", comunicacion: "Comunicación", organizacion: "Organización",
-};
-const CAT_ORDEN = ["direccion", "clientes", "comercial", "finanzas", "operaciones", "comunicacion", "organizacion"];
 const TIERS = ["Free", "Pro", "Premium"];
-
-const C = {
-  bg: "#0e1315", surface: "#161d20", surface2: "#1b2327", line: "#2a343a",
-  ink: "#e7ecee", soft: "#a3b0b6", faint: "#6c7c83", accent: "#2bb8ab", accentInk: "#7fd8ce",
-  warn: "#d69a3a", crit: "#e0685a",
-};
 
 export default function ConsolaPage() {
   const [agentes, setAgentes] = useState<AgenteVista[]>([]);
@@ -47,16 +40,26 @@ export default function ConsolaPage() {
   }
   useEffect(() => { void cargar(); }, []);
 
-  async function patch(v: AgenteVista, cambios: Partial<{ encendido: boolean; autonomia: Autonomia; plan: string }>) {
-    const next = { ...v, ...cambios };
+  async function patch(v: AgenteVista, cambios: Cambios) {
+    const { alias, ...cfg } = cambios;
+    const next: AgenteVista = {
+      ...v, ...cfg,
+      ...(alias !== undefined ? { persona: { ...v.persona, nombre: alias.trim() || v.persona.nombre, personalizado: Boolean(alias.trim()) } } : {}),
+    };
     setAgentes((xs) => xs.map((x) => (x.manifest.id === v.manifest.id ? next : x))); // optimista
-    const body = { agentId: v.manifest.id, encendido: next.encendido, autonomia: next.autonomia, ...(next.plan ? { plan: next.plan } : {}) };
+    const body = {
+      agentId: v.manifest.id, encendido: next.encendido, autonomia: next.autonomia,
+      ...(next.plan ? { plan: next.plan } : {}),
+      ...(alias !== undefined ? { alias } : {}), // sin alias en el body, el server conserva el que había
+    };
     try {
       const r = await fetch("/api/agents", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       if (!r.ok) throw new Error(String(r.status));
     } catch {
       void cargar(); // revertir desde el server si falló
+      return;
     }
+    if (alias !== undefined) void cargar(); // el server devuelve el nombre por defecto si se borró
   }
 
   async function correr() {
@@ -123,7 +126,14 @@ export default function ConsolaPage() {
   );
 }
 
-function AgenteCard({ a, onPatch }: { a: AgenteVista; onPatch: (v: AgenteVista, c: Partial<{ encendido: boolean; autonomia: Autonomia; plan: string }>) => void }) {
+function AgenteCard({ a, onPatch }: { a: AgenteVista; onPatch: (v: AgenteVista, c: Cambios) => void }) {
+  const [editando, setEditando] = useState(false);
+  const [borrador, setBorrador] = useState(a.persona.nombre);
+  const est = ESTADO[a.estado];
+  function guardar() {
+    setEditando(false);
+    if (borrador.trim() !== a.persona.nombre) onPatch(a, { alias: borrador.trim() });
+  }
   const opts = ORDEN_AUT.slice(0, ORDEN_AUT.indexOf(a.manifest.autonomiaMaxima) + 1);
   const dis = !a.disponible;
   return (
@@ -132,10 +142,24 @@ function AgenteCard({ a, onPatch }: { a: AgenteVista; onPatch: (v: AgenteVista, 
       background: dis ? "#121819" : C.surface, opacity: dis ? 0.55 : 1, display: "flex", flexDirection: "column", gap: 9,
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>{a.manifest.nombre}</div>
-          <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 10.5, color: C.faint, marginTop: 2 }}>
-            {a.manifest.id} · {a.manifest.nivelIA !== "ninguno" ? "IA" : "sin IA"} · riesgo {a.manifest.riesgo}
+        <div style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
+          <Avatar nombre={a.persona.nombre} categoria={a.manifest.categoria} size={38} estadoColor={est.color} />
+          <div style={{ minWidth: 0 }}>
+            {editando ? (
+              <input autoFocus value={borrador} maxLength={40} aria-label={`Nombre de ${a.persona.rol}`}
+                onChange={(e) => setBorrador(e.target.value)} onBlur={guardar}
+                onKeyDown={(e) => { if (e.key === "Enter") guardar(); if (e.key === "Escape") { setBorrador(a.persona.nombre); setEditando(false); } }}
+                style={{ background: C.surface2, color: C.ink, border: `1px solid ${C.accent}`, borderRadius: 6, padding: "2px 6px", fontSize: 14, fontWeight: 700, width: 130 }} />
+            ) : (
+              <div style={{ fontWeight: 700, fontSize: 14 }}>
+                {a.persona.nombre}
+                <button onClick={() => { setBorrador(a.persona.nombre); setEditando(true); }} title="Ponerle otro nombre" aria-label={`Renombrar a ${a.persona.nombre}`}
+                  style={{ background: "none", border: 0, color: C.faint, cursor: "pointer", fontSize: 12, marginLeft: 4 }}>✎</button>
+              </div>
+            )}
+            <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 10.5, color: C.faint, marginTop: 2 }}>
+              {a.persona.rol} · {a.manifest.nivelIA !== "ninguno" ? "IA" : "sin IA"} · riesgo {a.manifest.riesgo}
+            </div>
           </div>
         </div>
         <button role="switch" aria-checked={a.encendido} disabled={dis}

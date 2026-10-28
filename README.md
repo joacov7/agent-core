@@ -92,6 +92,9 @@ apps/
   `feedback` y `staff`; `sistemas` sumó `incidents` (triage de bugs, primer paso
   hacia un autofix gateado por enforcement); `cobranza_preventiva` y
   `compliance` amplían finanzas y organización reutilizando capacidades ya modeladas.
+- ✅ **Personas**: cada agente tiene nombre propio y saludo por defecto (`personas`), que el
+  tenant puede renombrar (`AgenteConfig.alias`); la app web los muestra como un equipo con
+  estado en vivo.
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 - ✅ `@agent-core/app-ejemplo`: adapter de referencia in-memory (providers con
@@ -99,7 +102,7 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**327 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**333 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
 (presupuesto/atribución) + adapter de persistencia Prisma + capa de servicio del SaaS
 + los 28 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
