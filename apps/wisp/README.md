@@ -5,6 +5,13 @@ Adapter de un **WISP** (proveedor de internet inalámbrico): lee la base de **gu
 datos reales. **Solo lectura**: los agentes recomiendan, nunca tocan guaynet (ni cortan
 servicios ni modifican abonos). Cadencia: `suscripcion`.
 
+## Qué versión de guaynet
+Los tests corren contra el **esquema real** de guaynet: el volcado de aplicar sus **43 migraciones** de Alembic
+(`rama claude/wisp-management-system-TTAsI`, la que incluye Seguridad, Soporte, Órdenes de trabajo, Inventario, etc.). La rama `main`
+de guaynet está desactualizada (1 migración): **no es la que corre en producción**. Este adapter solo usa las tablas del
+**servicio de internet** (`clients`, `invoices`, `payments`, `mikrotik_routers`, `ubiquiti_devices`); el módulo **Seguridad**
+(`sec_*`) todavía no está conectado (ver más abajo).
+
 ## Qué mapea
 
 | guaynet | Canónico | Agentes que habilita |
@@ -67,9 +74,9 @@ está conectada.
 
 ## Tests
 - `src/wisp.unit.test.ts`: mapeo, paginación, guardas de solo lectura y aislamiento de tenant (sin DB).
-- `src/wisp.pg.test.ts`: **contra Postgres real** con el esquema de guaynet (`test/guaynet-schema.sql`,
-  transcripto de su migración): consultas, el rol de solo lectura con el SQL de arriba **tal cual**
+- `src/wisp.pg.test.ts`: **contra Postgres real** con el **esquema real** de guaynet (`test/guaynet-schema.sql`,
+  volcado de sus 43 migraciones): consultas, el rol de solo lectura con el SQL de arriba **tal cual**
   (no puede escribir ni leer `users`/claves) y los agentes reales sobre los datos. Se activa con
   `WISP_TEST_DATABASE_URL=postgresql://usuario:clave@host:5432/postgres` (necesita poder crear bases y
-  roles); en CI corre contra un servicio Postgres. Si guaynet cambia su esquema, hay que actualizar
-  `test/guaynet-schema.sql`.
+  roles); en CI corre contra un servicio Postgres. Si guaynet migra su esquema, se regenera `test/guaynet-schema.sql`
+  (instrucciones en su encabezado).
