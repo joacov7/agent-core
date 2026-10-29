@@ -34,14 +34,42 @@ npm run dev          # http://localhost:3000
   limitación de CSP del artifact).
 - **Bandeja** (`/bandeja`): las recomendaciones que generan los agentes (firmadas por su autor), por prioridad,
   con filtro por severidad y un botón para correr el equipo.
+- **Chat** (`/agentes/<id>`, o tocá a cualquiera en `/`): conversás con un agente. Responde
+  en su voz y **solo con lo que él mismo encontró** (sus recomendaciones abiertas). No puede
+  ejecutar acciones desde el chat. Ver "IA del chat" más abajo.
 - **API**:
   - `GET  /api/agents` → agentes con disponibilidad + config del tenant.
   - `PUT  /api/agents` → encender/apagar/ajustar un agente (`AgenteConfigInput`); `alias` lo
     renombra (≤40 caracteres → si no, `400`). Sin `alias` en el body se conserva el actual; `""` lo borra.
   - `POST /api/run` → corre los agentes **encendidos** y devuelve lo ejecutado.
   - `GET  /api/recommendations` → bandeja del tenant, ordenada por prioridad.
+  - `POST /api/chat` → `{ agentId, messages:[{role:"user"|"assistant", content}] }` → `{ respuesta, modelo, uso }`.
+    Errores: `400` input inválido (el rol `system` solo lo pone el server), `429` tope de gasto,
+    `503` sin IA / modelo caído, `504` timeout.
 
 El tenant sale de `resolveTenant()` (header `x-tenant-id` o `DEV_TENANT`).
+
+## IA del chat
+El chat usa un modelo por una API compatible con OpenAI. **Por defecto, Ollama local: gratis,
+sin claves, y los datos no salen de tu máquina.** Sin modelo, todo lo demás de la app funciona
+igual y el chat avisa que no puede conectar.
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh     # instala el servicio (puerto 11434)
+ollama pull qwen2.5:1.5b                           # ~1,5 GB de RAM, anda sin GPU
+```
+
+| Equipo | Modelo sugerido |
+|---|---|
+| 4 GB de RAM, sin GPU | `qwen2.5:1.5b` (o `gemma2:2b`) |
+| 8 GB | `llama3.2:3b` |
+| con GPU / 16 GB+ | `qwen2.5:7b` o más |
+
+Un modelo chico alcanza para explicar hallazgos y redactar respuestas cortas; **no** para analizar
+un mercado ni razonar sobre cifras. Para cambiar de modelo o pasar a una API paga alcanza con el
+`.env` (ver `.env.example`): `AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`. `AI_PROVIDER=mock` da respuestas
+falsas para probar la UI y `AI_PROVIDER=off` apaga el chat. El gasto se atribuye por tenant y agente
+y se puede topar con `AI_BUDGET_TENANT`.
 
 ## Pasar a PRODUCCIÓN
 1. **Persistencia real** — en `src/lib/app.ts`, reemplazá el adapter in-memory por el

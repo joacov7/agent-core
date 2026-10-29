@@ -1,0 +1,36 @@
+{
+  "name": "@agent-core/ai-openai",
+  "version": "0.1.0",
+  "description": "AiCompletionProvider para cualquier API compatible con OpenAI (Ollama, llama.cpp, vLLM, OpenAI, …). Sin dependencias.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": ["dist", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joacov7/agent-core.git",
+    "directory": "packages/ai-openai"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "prepublishOnly": "tsc --build"
+  },
+  "dependencies": {
+    "@agent-core/contracts": "^0.1.0"
+  }
+}

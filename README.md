@@ -16,6 +16,7 @@ packages/
   agent-core/    @agent-core/core          engine, recommendations, policies, jefe-gabinete, resultados, memoria, ai-gateway
   agents/        @agent-core/agents        catálogo de agentes reutilizables (usan solo contracts + core)
   store-prisma/  @agent-core/store-prisma  adapter de persistencia del CoreStore sobre Postgres (Prisma)
+  ai-openai/     @agent-core/ai-openai     proveedor de IA para APIs compatibles con OpenAI (Ollama local o nube)
 ```
 
 Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapters
@@ -95,6 +96,10 @@ apps/
 - ✅ **Personas**: cada agente tiene nombre propio y saludo por defecto (`personas`), que el
   tenant puede renombrar (`AgenteConfig.alias`); la app web los muestra como un equipo con
   estado en vivo.
+- ✅ **Chat con los agentes**: cada uno responde en su voz y solo con lo que encontró. La IA es
+  un `AiCompletionProvider` intercambiable (`@agent-core/ai-openai`): Ollama local gratis por
+  defecto, o cualquier API compatible con OpenAI, siempre detrás del AI Gateway (presupuesto +
+  atribución de gasto).
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 - ✅ `@agent-core/app-ejemplo`: adapter de referencia in-memory (providers con
@@ -102,9 +107,9 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**333 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**343 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
-(presupuesto/atribución) + adapter de persistencia Prisma + capa de servicio del SaaS
+(presupuesto/atribución) + adapter de persistencia Prisma + proveedor de IA OpenAI-compatible + capa de servicio del SaaS (incl. chat)
 + los 28 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
 y marketplace).
 
@@ -146,7 +151,7 @@ npm run publish:all     # publica los 3 paquetes privados
 
 ## Publicación
 
-Los paquetes `@agent-core/*` (`contracts`, `core`, `agents`, `store-prisma`) se
+Los paquetes `@agent-core/*` (`contracts`, `core`, `agents`, `store-prisma`, `ai-openai`) se
 publican como **privados** (`publishConfig.access: restricted`, `0.1.0`, solo `dist/`
 + README); las apps y la raíz quedan `private`. Detalles, orden y registry (npmjs /
 GitHub Packages) en [`PUBLISHING.md`](./PUBLISHING.md).
