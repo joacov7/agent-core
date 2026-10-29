@@ -11,18 +11,21 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-core/contracts": "*",
-    "@agent-core/core": "*",
     "@agent-core/agents": "*",
-    "@agent-core/store-prisma": "*",
     "@agent-core/ai-openai": "*",
     "@agent-core/app-ejemplo": "*",
+    "@agent-core/app-wisp": "*",
+    "@agent-core/contracts": "*",
+    "@agent-core/core": "*",
+    "@agent-core/store-prisma": "*",
     "next": "^15.0.0",
+    "pg": "^8.12.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "@types/pg": "^8.11.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "typescript": "^5.6.0"

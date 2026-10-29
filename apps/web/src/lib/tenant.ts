@@ -12,7 +12,13 @@ import type { TenantCtx } from "@agent-core/contracts";
  *   const { orgId } = await auth();
  *   return { tenantId: orgId!, requestId: crypto.randomUUID(), now: () => new Date() };
  */
+/** Tenant por defecto: `DEV_TENANT`; con el adapter WISP activo, `WISP_TENANT` (default "guaynet"); si no, "demo". */
+export function tenantPorDefecto(): string {
+  if (process.env.DEV_TENANT) return process.env.DEV_TENANT;
+  return process.env.WISP_DATABASE_URL ? (process.env.WISP_TENANT || "guaynet") : "demo";
+}
+
 export function resolveTenant(req: { headers: { get(name: string): string | null } }): TenantCtx {
-  const tenantId = req.headers.get("x-tenant-id") ?? process.env.DEV_TENANT ?? "demo";
+  const tenantId = req.headers.get("x-tenant-id") ?? tenantPorDefecto();
   return { tenantId, requestId: crypto.randomUUID(), now: () => new Date() };
 }
