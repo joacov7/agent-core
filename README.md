@@ -27,6 +27,7 @@ apps/
   ejemplo/       @agent-core/app-ejemplo      adapter de referencia in-memory (retail) + smoke e2e
   juridico/      @agent-core/app-juridico     segundo adapter (estudio jurídico, cadencia proyecto)
   marketplace/   @agent-core/app-marketplace  tercer adapter (marketplace de dos lados, tenant por vendedor)
+  wisp/          @agent-core/app-wisp         cuarto adapter: un WISP real (guaynet, Postgres, solo lectura, cadencia suscripción)
   web/           @agent-core/web              app SaaS (Next.js): API + consola + bandeja (se corre con `npm run dev`)
 ```
 
@@ -107,7 +108,7 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**343 tests verdes** (vitest): paridad de los `.logic` + engine (activación,
+**364 tests verdes** (355 sin DB + 9 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
 (presupuesto/atribución) + adapter de persistencia Prisma + proveedor de IA OpenAI-compatible + capa de servicio del SaaS (incl. chat)
 + los 28 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico

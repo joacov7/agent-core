@@ -42,6 +42,33 @@ describe("Servicio del SaaS", () => {
     expect(res.recomendaciones.length).toBeGreaterThan(0);
   });
 
+  it("la bandeja dice A QUIÉN se refiere cada hallazgo (cobros y contactos), solo con capacidades", async () => {
+    const s = servicioDemo();
+    await s.setAgente(ctx, { agentId: "cobros", encendido: true, autonomia: "manual" });
+    await s.setAgente(ctx, { agentId: "crm", encendido: true, autonomia: "manual" });
+    await s.setAgente(ctx, { agentId: "inventario", encendido: true, autonomia: "manual" });
+    await s.correr(ctx);
+    const bandeja = await s.listarRecomendaciones(ctx);
+    const cobro = bandeja.find((r) => r.agentId === "cobros")!;
+    expect(cobro.refEntidad?.tipo).toBe("cobro");
+    expect(cobro.titular).toMatchObject({ id: "c1" });                       // el cobro cob1 es del contacto c1
+    expect(cobro.titular!.nombre.length).toBeGreaterThan(0);
+    const crm = bandeja.find((r) => r.agentId === "crm")!;
+    expect(crm.titular).toEqual({ id: crm.refEntidad!.id, nombre: expect.any(String) });
+    expect(bandeja.find((r) => r.agentId === "inventario")!.titular).toBeUndefined(); // un ítem no tiene titular
+  });
+
+  it("si falla la lectura de contactos, la bandeja sale igual (sin nombres)", async () => {
+    const app = crearApp();
+    await app.store.agentConfig.set(ctx, { agentId: "cobros", encendido: true, autonomia: "manual" });
+    const providers = { ...app.providers, contacts: { ...app.providers.contacts!, list: async () => { throw new Error("db caída"); } } };
+    const s = crearServicio({ store: app.store, providers, modeloNegocio: app.modeloNegocio });
+    await crearServicio({ store: app.store, providers: app.providers, modeloNegocio: app.modeloNegocio }).correr(ctx);
+    const bandeja = await s.listarRecomendaciones(ctx);
+    expect(bandeja.length).toBeGreaterThan(0);
+    expect(bandeja.every((r) => r.titular === undefined)).toBe(true);
+  });
+
   it("listarRecomendaciones devuelve la bandeja ordenada por prioridad", async () => {
     const s = servicioDemo();
     expect(await s.listarRecomendaciones(ctx)).toHaveLength(0); // vacía antes de correr

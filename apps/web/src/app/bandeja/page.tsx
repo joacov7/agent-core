@@ -9,6 +9,7 @@ interface Reco {
   id: string; agentId: string; tipo: string; titulo: string; descripcion?: string;
   severidad: Severidad; confianza: number; prioridad: number;
   impactoEstimado?: number | null; refEntidad?: { tipo: string; id: string };
+  titular?: { id: string; nombre: string };
 }
 
 interface Quien { nombre: string; rol: string; categoria: string }
@@ -109,6 +110,7 @@ export default function BandejaPage() {
                   p{r.prioridad} · {SEV[r.severidad].label}
                 </span>
               </div>
+              {r.titular && <p style={{ margin: "6px 0 0", fontSize: 13.5, fontWeight: 600 }}>👤 {r.titular.nombre}</p>}
               {r.descripcion && <p style={{ margin: "6px 0 0", fontSize: 13, color: C.soft }}>{r.descripcion}</p>}
               <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: C.faint, marginTop: 8, display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <span>{r.tipo}</span>

@@ -21,6 +21,11 @@ export interface ServicioDeps {
   ai?: AiGateway;
 }
 
+/** Una recomendación con el nombre de a quién se refiere (si se pudo resolver). */
+export interface RecomendacionVista extends Recomendacion {
+  titular?: { id: string; nombre: string };
+}
+
 /** Respuesta de un agente en el chat. */
 export interface RespuestaChat {
   respuesta: string;
@@ -67,7 +72,7 @@ export interface Servicio {
   setAgente(ctx: TenantCtx, cfg: AgenteConfigInput): Promise<AgenteConfig>;
   correr(ctx: TenantCtx): Promise<RunSeleccionResult>;
   /** Bandeja: las recomendaciones persistidas del tenant, de mayor a menor prioridad. */
-  listarRecomendaciones(ctx: TenantCtx): Promise<Recomendacion[]>;
+  listarRecomendaciones(ctx: TenantCtx): Promise<RecomendacionVista[]>;
   /**
    * Conversa con un agente. Responde en su voz y SOLO con lo que él mismo encontró (sus
    * recomendaciones abiertas); el historial lo manda el cliente y no puede traer `system`.
@@ -138,6 +143,35 @@ export function promptDeAgente(v: AgenteVista, recos: Recomendacion[]): string {
 
 export function crearServicio(deps: ServicioDeps): Servicio {
   const { store, providers, modeloNegocio, ai } = deps;
+
+  /**
+   * Resuelve "a quién se refiere" cada recomendación, solo con capacidades: un hallazgo sobre
+   * un `contacto` se nombra directo y uno sobre un `cobro` por el contacto dueño de ese cobro.
+   * Sin esto la bandeja diría "Cobrar 15000 (vencido hace 111 días)" sin decir a quién. Es
+   * best-effort: si falla la lectura, la bandeja sale igual (sin nombres).
+   */
+  async function conTitular(ctx: TenantCtx, recos: Recomendacion[]): Promise<RecomendacionVista[]> {
+    const hayContacto = recos.some((r) => r.refEntidad?.tipo === "contacto");
+    const hayCobro = recos.some((r) => r.refEntidad?.tipo === "cobro");
+    if (!providers.contacts || (!hayContacto && !hayCobro)) return recos;
+    try {
+      const nombres = new Map((await providers.contacts.list(ctx)).items.map((c) => [c.id, c.nombre]));
+      const cobroAContacto = new Map<string, string>();
+      if (hayCobro && providers.receivables) {
+        const [pendientes, vencidos] = await Promise.all([providers.receivables.pending(ctx), providers.receivables.overdue(ctx)]);
+        for (const c of [...pendientes.items, ...vencidos.items]) cobroAContacto.set(c.id, c.contactoId);
+      }
+      return recos.map((r) => {
+        const ref = r.refEntidad;
+        const contactoId = ref?.tipo === "contacto" ? ref.id : ref?.tipo === "cobro" ? cobroAContacto.get(ref.id) : undefined;
+        const nombre = contactoId !== undefined ? nombres.get(contactoId) : undefined;
+        return nombre !== undefined && contactoId !== undefined ? { ...r, titular: { id: contactoId, nombre } } : r;
+      });
+    } catch (e) {
+      console.error("[bandeja] no pude resolver los titulares:", e instanceof Error ? e.message : e);
+      return recos;
+    }
+  }
   const app: CapacidadesApp = modeloNegocio
     ? { capacidades: capacidadesDeProviders(providers), modeloNegocio }
     : { capacidades: capacidadesDeProviders(providers) };
@@ -213,9 +247,10 @@ export function crearServicio(deps: ServicioDeps): Servicio {
       const { items } = await store.recommendations.list(ctx);
       // Ordena por prioridad (1 = máxima) y, a igualdad, por severidad.
       const peso: Record<string, number> = { critica: 0, importante: 1, oportunidad: 2 };
-      return [...items].sort(
+      const ordenadas = [...items].sort(
         (a, b) => a.prioridad - b.prioridad || (peso[a.severidad] ?? 9) - (peso[b.severidad] ?? 9),
       );
+      return conTitular(ctx, ordenadas);
     },
 
     async chatear(ctx, agentId, mensajes) {

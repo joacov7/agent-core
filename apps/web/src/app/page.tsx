@@ -1,4 +1,5 @@
-import { servicio } from "@/lib/app";
+import { servicio, FUENTE } from "@/lib/app";
+import { tenantPorDefecto } from "@/lib/tenant";
 import { Avatar } from "@/components/Avatar";
 import { C, CAT_LABEL, CAT_ORDEN, ESTADO } from "@/lib/ui";
 
@@ -7,7 +8,7 @@ export const dynamic = "force-dynamic";
 // Server component: la vista de equipo. Muestra quién está en el equipo del tenant, qué
 // está haciendo cada agente ahora y cuántas novedades tiene.
 export default async function Home() {
-  const ctx = { tenantId: process.env.DEV_TENANT ?? "demo" };
+  const ctx = { tenantId: tenantPorDefecto() };
   const agentes = await servicio.listarAgentes(ctx);
   const disponibles = agentes.filter((a) => a.disponible);
   const activos = disponibles.filter((a) => a.encendido);
@@ -22,6 +23,9 @@ export default async function Home() {
       <p style={{ color: C.soft, marginTop: 0 }}>
         Tenant <b>{ctx.tenantId}</b> · {activos.length} en guardia de {disponibles.length} disponibles
         {novedades > 0 ? ` · ${novedades} novedad${novedades === 1 ? "" : "es"} para revisar` : ""}.
+      </p>
+      <p style={{ color: FUENTE === "wisp" ? C.accent : C.warn, fontSize: 13, margin: "0 0 6px" }}>
+        {FUENTE === "wisp" ? "● Datos reales del WISP (solo lectura)" : "● Datos de ejemplo (demo): conectá tu base con WISP_DATABASE_URL"}
       </p>
       <p style={{ marginTop: 4, display: "flex", gap: 18, flexWrap: "wrap" }}>
         <a href="/consola" style={{ color: C.accent, fontWeight: 600 }}>→ Consola (armar el equipo y correrlo)</a>

@@ -8,6 +8,7 @@
     { "path": "./packages/ai-openai" },
     { "path": "./apps/ejemplo" },
     { "path": "./apps/juridico" },
-    { "path": "./apps/marketplace" }
+    { "path": "./apps/marketplace" },
+    { "path": "./apps/wisp" }
   ]
 }

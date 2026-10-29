@@ -17,6 +17,7 @@
     "apps/ejemplo",
     "apps/juridico",
     "apps/marketplace",
+    "apps/wisp",
     "apps/web"
   ],
   "scripts": {

@@ -49,6 +49,11 @@ npm run dev          # http://localhost:3000
 
 El tenant sale de `resolveTenant()` (header `x-tenant-id` o `DEV_TENANT`).
 
+## Datos reales de tu WISP (guaynet)
+Con `WISP_DATABASE_URL` en el `.env`, la app lee la base de guaynet en **solo lectura** en vez de
+los datos de ejemplo (la home lo indica). Guía completa, mapeo y el SQL del usuario de solo
+lectura en [`apps/wisp`](../wisp/README.md). Sin esa variable sigue funcionando con el demo.
+
 ## IA del chat
 El chat usa un modelo por una API compatible con OpenAI. **Por defecto, Ollama local: gratis,
 sin claves, y los datos no salen de tu máquina.** Sin modelo, todo lo demás de la app funciona
