@@ -108,9 +108,17 @@ describe.skipIf(!URL_ADMIN)("adapter WISP contra Postgres real (esquema de guayn
 
   afterAll(async () => {
     await ro?.end(); await seed?.end();
-    await admin?.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
-    await admin?.query(`DROP ROLE IF EXISTS ${rol}`);
-    await admin?.end();
+    // `pool.end()` resuelve antes de que los sockets cierren de verdad: borrar la base con
+    // FORCE en ese instante mata sesiones a mitad de cierre y el cliente emite un 'error'
+    // sin escucha (falló 1 de cada ~8 corridas bajo carga, y en CI). Se espera a que cierren.
+    for (let i = 0; i < 100; i++) {
+      const { rows } = await admin.query("SELECT 1 FROM pg_stat_activity WHERE datname = $1", [dbName]);
+      if (rows.length === 0) break;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    await admin.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`); // red de seguridad: ya no hay sesiones
+    await admin.query(`DROP ROLE IF EXISTS ${rol}`);
+    await admin.end();
   });
 
   it("contactos: activos y suspendidos (la baja no), con id numérico como texto", async () => {
