@@ -27,6 +27,8 @@ import { agenteRrhh } from "./agentes/rrhh/index.js";
 import { agenteAnalista } from "./agentes/analista/index.js";
 import { agenteCeo } from "./agentes/ceo/index.js";
 import { agenteJefeGabinete } from "./agentes/jefe-gabinete/index.js";
+import { agenteAsistente } from "./agentes/asistente/index.js";
+import { registrarCatalogoParaRoles } from "./agentes/asistente/roles.js";
 
 /**
  * Catálogo de agentes reutilizables. El engine lo recorre y activa cada agente si
@@ -71,4 +73,8 @@ export const catalogo: Agent[] = [
   agenteAnalista,
   agenteCeo,
   agenteJefeGabinete,
+  // El Asistente va ÚLTIMO: avisa de lo que dejaron todos los demás.
+  agenteAsistente,
 ];
+
+registrarCatalogoParaRoles(catalogo);

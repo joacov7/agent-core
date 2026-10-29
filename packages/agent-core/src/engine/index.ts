@@ -6,6 +6,7 @@ import { esActivable, type CapacidadesApp } from "../activacion/index.js";
 import { capacidadesDeProviders } from "./capacidades.js";
 import { seleccionDeStore, type PorDefecto } from "./seleccion.js";
 import { relojPorDefecto, generarIdPorDefecto, type Reloj, type GenerarId } from "./ids.js";
+import { ESTADOS_VIVOS } from "../recommendations/recommendations.logic.js";
 
 export * from "./capacidades.js";
 export * from "./enforcement.js";
@@ -89,14 +90,32 @@ export async function runAgent(input: RunAgentInput): Promise<RunAgentResult> {
   const now = input.deps?.now ?? relojPorDefecto;
   const genId = input.deps?.generarId ?? generarIdPorDefecto;
 
+  // Dedup: una sola recomendación VIVA por (agente, dedupKey). Si el agente vuelve a detectar lo
+  // mismo, se REFRESCA la existente (mismo id, creadoEn y estado; datos nuevos) en vez de duplicarla.
+  // Sin esto cada corrida —manual o programada— duplicaría toda la bandeja.
+  const { items: existentes } = await input.store.recommendations.list(input.ctx);
+  const vivas = new Map<string, Recomendacion>();
+  for (const e of existentes) {
+    if (!e.dedupKey || !ESTADOS_VIVOS.includes(e.estado)) continue;
+    const k = `${e.agentId}|${e.dedupKey}`;
+    const previa = vivas.get(k);
+    if (!previa || e.creadoEn > previa.creadoEn) vivas.set(k, e); // si ya había duplicadas, la más nueva
+  }
+
   const recomendaciones: Recomendacion[] = [];
   for (const nueva of salida.recomendaciones) {
-    const persistida = await input.store.recommendations.save(input.ctx, {
-      ...nueva,
-      id: genId(),
-      tenantId: input.ctx.tenantId,
-      creadoEn: now().toISOString(),
-    });
+    const clave = nueva.dedupKey ? `${nueva.agentId}|${nueva.dedupKey}` : null;
+    const previa = clave ? vivas.get(clave) : undefined;
+    const persistida = await input.store.recommendations.save(
+      input.ctx,
+      previa
+        ? {
+            ...nueva, id: previa.id, tenantId: previa.tenantId, creadoEn: previa.creadoEn,
+            estado: previa.estado, actualizadoEn: now().toISOString(),
+          }
+        : { ...nueva, id: genId(), tenantId: input.ctx.tenantId, creadoEn: now().toISOString() },
+    );
+    if (clave) vivas.set(clave, persistida);
     recomendaciones.push(persistida);
   }
 

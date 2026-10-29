@@ -16,7 +16,7 @@ servicios ni modifican abonos). Cadencia: `suscripcion`.
 
 No expone `catalog` (los planes no alimentan a ningún agente y activaría Rentabilidad sin datos
 de costo) ni lo que guaynet no tiene (agenda, personal, NPS, inventario): esos agentes quedan
-apagados solos. Con tu base: **13 de 28 agentes disponibles**.
+apagados solos. Con tu base: **14 de 29 agentes disponibles** (incluido el Asistente personal).
 
 Detalles que importan:
 - **Vencido** = factura marcada `overdue` **o** con la fecha pasada aunque guaynet todavía no la

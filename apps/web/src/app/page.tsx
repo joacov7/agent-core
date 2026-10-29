@@ -1,5 +1,6 @@
 import { servicio, FUENTE } from "@/lib/app";
 import { tenantPorDefecto } from "@/lib/tenant";
+import { PanelAvisos } from "@/components/PanelAvisos";
 import { Avatar } from "@/components/Avatar";
 import { C, CAT_LABEL, CAT_ORDEN, ESTADO } from "@/lib/ui";
 
@@ -27,7 +28,8 @@ export default async function Home() {
       <p style={{ color: FUENTE === "wisp" ? C.accent : C.warn, fontSize: 13, margin: "0 0 6px" }}>
         {FUENTE === "wisp" ? "● Datos reales del WISP (solo lectura)" : "● Datos de ejemplo (demo): conectá tu base con WISP_DATABASE_URL"}
       </p>
-      <p style={{ marginTop: 4, display: "flex", gap: 18, flexWrap: "wrap" }}>
+      <PanelAvisos />
+      <p style={{ marginTop: 10, display: "flex", gap: 18, flexWrap: "wrap" }}>
         <a href="/consola" style={{ color: C.accent, fontWeight: 600 }}>→ Consola (armar el equipo y correrlo)</a>
         <a href="/bandeja" style={{ color: C.accent, fontWeight: 600 }}>→ Bandeja de recomendaciones</a>
       </p>

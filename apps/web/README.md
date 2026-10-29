@@ -43,6 +43,7 @@ npm run dev          # http://localhost:3000
     renombra (≤40 caracteres → si no, `400`). Sin `alias` en el body se conserva el actual; `""` lo borra.
   - `POST /api/run` → corre los agentes **encendidos** y devuelve lo ejecutado.
   - `GET  /api/recommendations` → bandeja del tenant, ordenada por prioridad.
+  - `GET /api/asistente` → estado de los avisos (sin token ni chat ids) · `POST /api/asistente/prueba` → mensaje de prueba por Telegram.
   - `POST /api/chat` → `{ agentId, messages:[{role:"user"|"assistant", content}] }` → `{ respuesta, modelo, uso }`.
     Errores: `400` input inválido (el rol `system` solo lo pone el server), `429` tope de gasto,
     `503` sin IA / modelo caído, `504` timeout.
@@ -53,6 +54,39 @@ El tenant sale de `resolveTenant()` (header `x-tenant-id` o `DEV_TENANT`).
 Con `WISP_DATABASE_URL` en el `.env`, la app lee la base de guaynet en **solo lectura** en vez de
 los datos de ejemplo (la home lo indica). Guía completa, mapeo y el SQL del usuario de solo
 lectura en [`apps/wisp`](../wisp/README.md). Sin esa variable sigue funcionando con el demo.
+
+## Avisos por Telegram (Asistente personal)
+**Gael**, el Asistente personal, es el agente proactivo: te escribe por Telegram el **resumen de la
+mañana** y te **avisa al instante** de lo urgente. **Solo avisa**: no ejecuta acciones ni toca ningún
+sistema. Es el interruptor de los avisos: **apagado, no escribe nada**.
+
+**Configurarlo (5 minutos):**
+1. En Telegram hablale a **@BotFather** → `/newbot` → copiá el **token**.
+2. Abrí tu bot y mandale **/start** (un bot no puede escribirle a quien no lo inició).
+3. En `apps/web/.env`: `TELEGRAM_BOT_TOKEN=<token>` y corré `npm run telegram:chat-id`: te muestra tu
+   **chat id**. Ponelo en `TELEGRAM_CHAT_IDS=<id>`.
+4. Levantá la app: en la home, **"Enviar mensaje de prueba"** confirma que llega.
+5. Para activar los avisos programados: `SCHEDULER=on` en el `.env`, reiniciá, y **encendé a Gael en `/consola`**
+   (más los agentes que quieras que te informen).
+
+**Qué manda y cuándo:**
+| | |
+|---|---|
+| **Resumen** | Una vez por día a `RESUMEN_HORA` (08:00). Críticas, importantes y oportunidades, por agente. Si la app estuvo caída, se manda hasta 2 h tarde; pasado eso sería un resumen viejo y se omite. |
+| **Alertas** | Cada `ALERTAS_CADA_MIN` (30) min revisa y avisa solo lo **crítico y nuevo**, una vez (no repite lo que ya estaba en el resumen). Nunca en la franja `ALERTAS_SILENCIO` (22:00–08:00) y con tope de `ALERTAS_MAX_DIA` (5) mensajes por día; lo que quede aparece en el resumen de mañana. |
+
+**Garantías:**
+- **Solo envía.** No hay webhook ni comandos entrantes: no expone ningún puerto y nadie puede darle órdenes al sistema por el chat.
+- **Manda solo a `TELEGRAM_CHAT_IDS`** (lista cerrada). El token nunca aparece en logs, errores ni respuestas de la API.
+- **Privacidad:** por defecto los mensajes **no llevan nombres de clientes** (solo tipos y montos): los chats normales de
+  Telegram no tienen cifrado de extremo a extremo. `AVISOS_NOMBRES=on` los incluye.
+- Si Telegram o la base fallan, **no se da el aviso por enviado**: se reintenta (el resumen a los 10 min) y el error queda en el log.
+- El estado (qué se avisó) se guarda en `.agentcore/estado-avisos.json` (permisos 600): **reiniciar no reenvía** el resumen de hoy ni repite alertas.
+- Una sola revisión a la vez, y el motor **deduplica**: correr el equipo muchas veces no duplica la bandeja ni los avisos.
+
+**Ojo:** `GET /api/asistente` y `POST /api/asistente/prueba` no tienen login todavía (como el resto de la app): mantené la
+app en `127.0.0.1` o dentro de tu red. La prueba está limitada a una cada 30 s. El programador atiende a **un solo tenant**
+(`WISP_TENANT`/`DEV_TENANT`).
 
 ## IA del chat
 El chat usa un modelo por una API compatible con OpenAI. **Por defecto, Ollama local: gratis,

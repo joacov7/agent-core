@@ -43,6 +43,16 @@ const t2: TenantCtx = { tenantId: "t2" };
 const base = { creadoEn: "2026-10-10T00:00:00.000Z" };
 
 describe("crearCoreStorePrisma", () => {
+  it("recommendations: save es idempotente por id (upsert) y no cambia tenant ni creadoEn", async () => {
+    const store = crearCoreStorePrisma(fakePrisma());
+    const r: Recomendacion = { id: "r9", tenantId: "t1", agentId: "cobros", tipo: "cobro_vencido", titulo: "v1", estado: "proposed", severidad: "importante", confianza: 90, prioridad: 2, dedupKey: "k", ...base };
+    await store.recommendations.save(t1, r);
+    await store.recommendations.save(t1, { ...r, titulo: "v2", severidad: "critica", creadoEn: "2030-01-01T00:00:00.000Z" });
+    const { items } = await store.recommendations.list(t1);
+    expect(items).toHaveLength(1);                                  // no duplicó
+    expect(items[0]).toMatchObject({ id: "r9", titulo: "v2", severidad: "critica" });
+  });
+
   it("recommendations: persiste, lee por id y aísla por tenant", async () => {
     const store = crearCoreStorePrisma(fakePrisma());
     const reco: Recomendacion = { id: "r1", tenantId: "t1", agentId: "cobros", tipo: "cobro_vencido", titulo: "X", estado: "proposed", severidad: "critica", confianza: 100, prioridad: 1, ...base };

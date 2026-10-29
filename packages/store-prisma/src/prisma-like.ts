@@ -27,7 +27,7 @@ export interface DelegadoUpsert<Row> extends DelegadoLectura<Row> {
 
 /** El cliente de datos que el adapter necesita (subconjunto de PrismaClient). */
 export interface PrismaLike {
-  recomendacion: DelegadoEscritura<FilaConData>;
+  recomendacion: DelegadoEscritura<FilaConData> & DelegadoUpsert<FilaConData>;
   resultadoAccion: DelegadoEscritura<FilaConData>;
   impacto: DelegadoEscritura<FilaConData>;
   entradaMemoria: DelegadoEscritura<FilaConData>;

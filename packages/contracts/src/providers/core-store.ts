@@ -17,6 +17,10 @@ import type { AgenteConfig, AgenteConfigInput } from "../canonical/agente-config
  * tenant; los tests verifican esa propiedad.
  */
 export interface RecommendationStore {
+  /**
+   * Persiste la recomendación. **Idempotente por `id`** (upsert): si ya existe, la reemplaza.
+   * El motor lo usa para refrescar una recomendación viva (misma `dedupKey`) en vez de duplicarla.
+   */
   save(ctx: TenantCtx, reco: Recomendacion): Promise<Recomendacion>;
   get(ctx: TenantCtx, id: ID): Promise<Recomendacion | null>;
   list(ctx: TenantCtx, query?: ListQuery): Promise<Page<Recomendacion>>;

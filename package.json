@@ -14,6 +14,7 @@
     "packages/agents",
     "packages/store-prisma",
     "packages/ai-openai",
+    "packages/notify-telegram",
     "apps/ejemplo",
     "apps/juridico",
     "apps/marketplace",
@@ -28,8 +29,8 @@
     "test:watch": "vitest",
     "lint": "echo \"(lint pendiente)\" && exit 0",
     "release:check": "npm run build && npm test",
-    "publish:dry": "npm publish --dry-run -w @agent-core/contracts -w @agent-core/core -w @agent-core/agents -w @agent-core/store-prisma -w @agent-core/ai-openai",
-    "publish:all": "npm publish -w @agent-core/contracts -w @agent-core/core -w @agent-core/agents -w @agent-core/store-prisma -w @agent-core/ai-openai"
+    "publish:dry": "npm publish --dry-run -w @agent-core/contracts -w @agent-core/core -w @agent-core/agents -w @agent-core/store-prisma -w @agent-core/ai-openai -w @agent-core/notify-telegram",
+    "publish:all": "npm publish -w @agent-core/contracts -w @agent-core/core -w @agent-core/agents -w @agent-core/store-prisma -w @agent-core/ai-openai -w @agent-core/notify-telegram"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

@@ -8,7 +8,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "telegram:chat-id": "node --env-file=.env scripts/telegram-chat-id.mjs"
   },
   "dependencies": {
     "@agent-core/agents": "*",
@@ -17,6 +18,7 @@
     "@agent-core/app-wisp": "*",
     "@agent-core/contracts": "*",
     "@agent-core/core": "*",
+    "@agent-core/notify-telegram": "*",
     "@agent-core/store-prisma": "*",
     "next": "^15.0.0",
     "pg": "^8.12.0",

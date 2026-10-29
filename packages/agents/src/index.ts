@@ -23,3 +23,4 @@ export * from "./agentes/analista/index.js";
 export * from "./agentes/ceo/index.js";
 export * from "./agentes/jefe-gabinete/index.js";
 export * from "./personas.js";
+export * from "./agentes/asistente/index.js";

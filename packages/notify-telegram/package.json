@@ -1,0 +1,36 @@
+{
+  "name": "@agent-core/notify-telegram",
+  "version": "0.1.0",
+  "description": "Notificador por Telegram (Bot API) para agent-core. Solo envía. Sin dependencias.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": ["dist", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joacov7/agent-core.git",
+    "directory": "packages/notify-telegram"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "prepublishOnly": "tsc --build"
+  },
+  "dependencies": {
+    "@agent-core/contracts": "^0.1.0"
+  }
+}
