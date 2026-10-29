@@ -5,6 +5,7 @@
     { "path": "./packages/agent-core" },
     { "path": "./packages/agents" },
     { "path": "./packages/store-prisma" },
+    { "path": "./packages/ai-openai" },
     { "path": "./apps/ejemplo" },
     { "path": "./apps/juridico" },
     { "path": "./apps/marketplace" }

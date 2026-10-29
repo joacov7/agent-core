@@ -27,6 +27,7 @@ export default async function Home() {
         <a href="/consola" style={{ color: C.accent, fontWeight: 600 }}>→ Consola (armar el equipo y correrlo)</a>
         <a href="/bandeja" style={{ color: C.accent, fontWeight: 600 }}>→ Bandeja de recomendaciones</a>
       </p>
+      <p style={{ color: C.faint, fontSize: 13, margin: "4px 0 0" }}>Tocá a cualquiera para charlar con él o ella.</p>
 
       {CAT_ORDEN.filter((cat) => agentes.some((a) => a.manifest.categoria === cat)).map((cat) => (
         <section key={cat} style={{ marginTop: 26 }}>
@@ -37,8 +38,8 @@ export default async function Home() {
             {agentes.filter((a) => a.manifest.categoria === cat).map((a) => {
               const est = ESTADO[a.estado];
               return (
-                <div key={a.manifest.id} style={{
-                  display: "flex", gap: 12, alignItems: "flex-start",
+                <a key={a.manifest.id} href={`/agentes/${a.manifest.id}`} title={`Hablar con ${a.persona.nombre}`} style={{
+                  display: "flex", gap: 12, alignItems: "flex-start", color: "inherit", textDecoration: "none",
                   border: `1px solid ${a.encendido ? C.accent : C.line}`, borderRadius: 12, padding: "12px 14px",
                   background: a.disponible ? C.surface : "#121819", opacity: a.disponible ? 1 : 0.5,
                 }}>
@@ -54,7 +55,7 @@ export default async function Home() {
                       <div style={{ fontSize: 12.5, color: C.soft, marginTop: 6, lineHeight: 1.4 }}>“{a.persona.saludo}”</div>
                     )}
                   </div>
-                </div>
+                </a>
               );
             })}
           </div>
