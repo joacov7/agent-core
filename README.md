@@ -69,7 +69,7 @@ apps/
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 29 agentes, **todos con `run()` funcional**.
+- ✅ `@agent-core/agents`: catálogo con 30 agentes, **todos con `run()` funcional**.
   - dirección: `ceo`, `jefe` (Jefe de Gabinete), `analista` — leen las
     recomendaciones ya generadas (vía `CoreStore`) y las resumen/priorizan.
   - clientes: `crm`, `oportunidades`, `seguimiento` (pipeline), `riesgo_abandono`
@@ -115,7 +115,7 @@ apps/
 **406 tests verdes** (397 sin DB + 9 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
 (presupuesto/atribución) + adapter de persistencia Prisma + proveedor de IA OpenAI-compatible + capa de servicio del SaaS (incl. chat)
-+ los 29 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
++ los 30 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
 y marketplace).
 
 ## Principios

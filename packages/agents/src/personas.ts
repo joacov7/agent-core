@@ -7,6 +7,7 @@ import type { PersonaAgente } from "@agent-core/contracts";
  */
 export const personas: Record<string, PersonaAgente> = {
   ceo: { nombre: "Alex", saludo: "Te resumo cómo viene el negocio y qué decisiones no pueden esperar." },
+  guardia: { nombre: "Valen", saludo: "Vigilo que ninguna alerta grave quede sin atender y te aviso si pasan los minutos." },
   asistente: { nombre: "Gael", saludo: "Te escribo cada mañana con lo importante y te aviso al instante si pasa algo grave." },
   jefe: { nombre: "Sol", saludo: "Ordeno las prioridades del equipo para que sepas por dónde empezar." },
   analista: { nombre: "Noa", saludo: "Leo lo que encontraron los demás y te lo explico con números." },

@@ -27,6 +27,7 @@ import { agenteRrhh } from "./agentes/rrhh/index.js";
 import { agenteAnalista } from "./agentes/analista/index.js";
 import { agenteCeo } from "./agentes/ceo/index.js";
 import { agenteJefeGabinete } from "./agentes/jefe-gabinete/index.js";
+import { agenteGuardia } from "./agentes/guardia/index.js";
 import { agenteAsistente } from "./agentes/asistente/index.js";
 import { registrarCatalogoParaRoles } from "./agentes/asistente/roles.js";
 
@@ -62,6 +63,7 @@ export const catalogo: Agent[] = [
   agenteLogistica,
   agenteProduccion,
   agenteSistemas,
+  agenteGuardia,
   agenteCompliance,
   agentePostventa,
   agenteVentas,
