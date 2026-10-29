@@ -84,7 +84,9 @@ export interface Servicio {
 const MAX_ALIAS = 40;
 
 /** El chat no está configurado (no hay proveedor de IA). La capa HTTP lo traduce a 503. */
-export class ErrorIANoDisponible extends Error {}
+export class ErrorIANoDisponible extends Error {
+  override name = "ErrorIANoDisponible";
+}
 
 /** Límites del chat: protegen al modelo (chico, en CPU) y al presupuesto. */
 export const CHAT_MAX_MENSAJES = 8;
@@ -93,7 +95,9 @@ const CHAT_MAX_TOKENS = 300;
 const CHAT_MAX_RECOS = 6;
 
 /** Input inválido del cliente (la capa HTTP lo traduce a 400, no a 500). */
-export class ErrorDeValidacion extends Error {}
+export class ErrorDeValidacion extends Error {
+  override name = "ErrorDeValidacion";
+}
 const CERRADAS = new Set(["executed", "rejected", "cancelled", "expired", "failed"]);
 
 /** Recorta texto de datos del negocio antes de ponerlo en el prompt. */
@@ -143,6 +147,12 @@ export function promptDeAgente(v: AgenteVista, recos: Recomendacion[]): string {
 
 export function crearServicio(deps: ServicioDeps): Servicio {
   const { store, providers, modeloNegocio, ai } = deps;
+  let cola: Promise<void> = Promise.resolve();
+  const correrUna = (ctx: TenantCtx) =>
+    runSeleccion({
+      catalogo, ctx, providers, store,
+      ...(modeloNegocio ? { modeloNegocio } : {}),
+    });
 
   /**
    * Resuelve "a quién se refiere" cada recomendación, solo con capacidades: un hallazgo sobre
@@ -237,10 +247,11 @@ export function crearServicio(deps: ServicioDeps): Servicio {
     },
 
     async correr(ctx) {
-      return runSeleccion({
-        catalogo, ctx, providers, store,
-        ...(modeloNegocio ? { modeloNegocio } : {}),
-      });
+      // Una corrida a la vez: el programador y el botón "Correr equipo" no se pisan (ambos leen la
+      // bandeja y guardan recomendaciones; en paralelo podrían duplicar).
+      const turno = cola.then(() => correrUna(ctx), () => correrUna(ctx));
+      cola = turno.then(() => undefined, () => undefined);
+      return turno;
     },
 
     async listarRecomendaciones(ctx) {

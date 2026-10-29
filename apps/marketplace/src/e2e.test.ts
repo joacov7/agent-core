@@ -20,7 +20,7 @@ describe("marketplace — reutilización del Core (cadencia transaccional_repeti
     expect(activables).toEqual(new Set([
       "tareas", "whatsapp", "crm", "oportunidades", "rentabilidad", "cobros", "morosidad",
       "cobranza_preventiva", "flujo_caja", "inventario", "seguimiento", "riesgo_abandono",
-      "competencia", "precios", "postventa", "ventas", "nps", "analista", "ceo", "jefe",
+      "competencia", "precios", "postventa", "ventas", "nps", "analista", "ceo", "jefe", "asistente",
     ]));
     // OFF: agentes que piden capacidades que el vendedor no expone.
     for (const off of ["agenda", "compliance", "compras", "logistica", "produccion", "prospeccion", "rrhh", "sistemas"]) {

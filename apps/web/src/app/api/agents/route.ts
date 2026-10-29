@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveTenant } from "@/lib/tenant";
 import { servicio } from "@/lib/app";
-import { ErrorDeValidacion } from "@/lib/service";
+import { esError } from "@/lib/errores";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export async function PUT(req: Request) {
   try {
     return NextResponse.json(await servicio.setAgente(ctx, cfg));
   } catch (e) {
-    if (e instanceof ErrorDeValidacion) return NextResponse.json({ error: e.message }, { status: 400 });
+    if (esError(e, "ErrorDeValidacion")) return NextResponse.json({ error: e.message }, { status: 400 });
     throw e;
   }
 }

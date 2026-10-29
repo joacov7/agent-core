@@ -32,7 +32,11 @@ export function crearCoreStore(): CoreStoreEnMemoria {
   return {
     _recos: recos, _results: results, _impacts: impacts, _mem: mem, _gasto: gasto, _agentCfgs: agentCfgs,
     recommendations: {
-      async save(_ctx, r) { recos.push(r); return r; },
+      async save(_ctx, r) {
+        const i = recos.findIndex((x) => x.id === r.id && x.tenantId === r.tenantId);
+        if (i >= 0) recos[i] = r; else recos.push(r); // idempotente por id (upsert)
+        return r;
+      },
       async get(ctx, id) { return delTenant(recos, ctx).find((r) => r.id === id) ?? null; },
       async list(ctx) { return { items: delTenant(recos, ctx) }; },
     },

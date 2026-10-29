@@ -22,7 +22,11 @@ function crearStore(): StoreFake {
   return {
     _recos: recos, _results: results, _mem: mem, _impacts: impacts,
     recommendations: {
-      async save(_ctx, r) { recos.push(r); return r; },
+      async save(_ctx, r) {
+        const i = recos.findIndex((x) => x.id === r.id);
+        if (i >= 0) recos[i] = r; else recos.push(r); // idempotente por id (upsert), como los stores reales
+        return r;
+      },
       async get(_ctx, id) { return recos.find((x) => x.id === id) ?? null; },
       async list() { return { items: recos }; },
     },
@@ -228,5 +232,69 @@ describe("registrarDecision + enforcement", () => {
       decisiones: store._mem.map((m) => ({ kind: m.kind, value: m.contenido as never })),
     });
     expect(decision.permitido).toBe(false);
+  });
+});
+
+describe("runAgent: dedup de recomendaciones vivas", () => {
+  const conClave = (over: Partial<RecomendacionNueva> = {}): RecomendacionNueva => ({
+    agentId: "fake", tipo: "cobro_vencido", titulo: "Cobrar (vencido hace 10 días)", estado: "proposed",
+    severidad: "importante", confianza: 90, prioridad: 2, dedupKey: "fake:cobro:1", ...over,
+  });
+  const agente = (salida: () => RecomendacionNueva[]): Agent => ({ manifest: mani({}), run: async () => ({ recomendaciones: salida() }) });
+  let n = 0;
+  const idsSecuenciales = () => ({ generarId: () => `id-${++n}`, now: () => new Date(`2026-01-0${Math.min(n + 1, 9)}T00:00:00.000Z`) });
+
+  it("volver a detectar lo mismo REFRESCA la existente: sin duplicar, conserva id/creadoEn/estado", async () => {
+    n = 0;
+    const store = crearStore();
+    await runAgent({ agent: agente(() => [conClave()]), ctx, providers: {}, store, deps: idsSecuenciales() });
+    // En el medio, alguien la mueve de estado (p.ej. queda pendiente de aprobación).
+    store._recos[0] = { ...store._recos[0]!, estado: "pending_approval" };
+
+    const r = await runAgent({
+      agent: agente(() => [conClave({ titulo: "Cobrar (vencido hace 11 días)", severidad: "critica", prioridad: 1 })]),
+      ctx, providers: {}, store, deps: idsSecuenciales(),
+    });
+
+    expect(store._recos).toHaveLength(1);                                   // no se duplicó
+    expect(store._recos[0]).toMatchObject({
+      id: "id-1", titulo: "Cobrar (vencido hace 11 días)", severidad: "critica", prioridad: 1, // datos nuevos
+      estado: "pending_approval", creadoEn: "2026-01-02T00:00:00.000Z",     // estado e historia, intactos
+    });
+    expect(store._recos[0]!.actualizadoEn).toBeDefined();
+    expect(r.recomendaciones).toHaveLength(1);                              // la corrida igual informa lo detectado
+  });
+
+  it("si la anterior ya está cerrada (ejecutada/rechazada), se crea una nueva", async () => {
+    n = 0;
+    const store = crearStore();
+    await runAgent({ agent: agente(() => [conClave()]), ctx, providers: {}, store, deps: idsSecuenciales() });
+    store._recos[0] = { ...store._recos[0]!, estado: "executed" };
+    await runAgent({ agent: agente(() => [conClave()]), ctx, providers: {}, store, deps: idsSecuenciales() });
+    expect(store._recos).toHaveLength(2);
+    expect(store._recos.map((r) => r.estado)).toEqual(["executed", "proposed"]);
+  });
+
+  it("sin dedupKey no se deduplica; y otro agente con la misma clave no se pisa", async () => {
+    n = 0;
+    const store = crearStore();
+    const sinClave = () => [conClave({ dedupKey: null })];
+    await runAgent({ agent: agente(sinClave), ctx, providers: {}, store, deps: idsSecuenciales() });
+    await runAgent({ agent: agente(sinClave), ctx, providers: {}, store, deps: idsSecuenciales() });
+    expect(store._recos).toHaveLength(2);
+
+    const store2 = crearStore();
+    await runAgent({ agent: agente(() => [conClave()]), ctx, providers: {}, store: store2, deps: idsSecuenciales() });
+    const otro: Agent = { manifest: mani({ id: "otro" }), run: async () => ({ recomendaciones: [conClave({ agentId: "otro" })] }) };
+    await runAgent({ agent: otro, ctx, providers: {}, store: store2, deps: idsSecuenciales() });
+    expect(store2._recos.map((r) => r.agentId).sort()).toEqual(["fake", "otro"]);
+  });
+
+  it("dos recomendaciones con la misma clave en una MISMA corrida quedan en una", async () => {
+    n = 0;
+    const store = crearStore();
+    await runAgent({ agent: agente(() => [conClave(), conClave({ titulo: "otra versión" })]), ctx, providers: {}, store, deps: idsSecuenciales() });
+    expect(store._recos).toHaveLength(1);
+    expect(store._recos[0]!.titulo).toBe("otra versión");
   });
 });

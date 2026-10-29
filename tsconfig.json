@@ -6,6 +6,7 @@
     { "path": "./packages/agents" },
     { "path": "./packages/store-prisma" },
     { "path": "./packages/ai-openai" },
+    { "path": "./packages/notify-telegram" },
     { "path": "./apps/ejemplo" },
     { "path": "./apps/juridico" },
     { "path": "./apps/marketplace" },

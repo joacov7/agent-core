@@ -3,6 +3,7 @@ import type { AiRequest, TenantCtx } from "@agent-core/contracts";
 import type { AiGateway } from "@agent-core/core";
 import { crearApp } from "@agent-core/app-ejemplo";
 import { crearServicio, ErrorDeValidacion, ErrorIANoDisponible, CHAT_MAX_CARACTERES, CHAT_MAX_MENSAJES } from "./service.js";
+import { esError } from "./errores.js";
 
 // La capa de servicio sobre el adapter de referencia in-memory (retail). Valida que
 // la API expone correctamente disponibilidad + config + corrida, sin HTTP ni Next.
@@ -17,7 +18,7 @@ describe("Servicio del SaaS", () => {
   it("listarAgentes: marca disponibles y arranca todo apagado sin config", async () => {
     const s = servicioDemo();
     const vistas = await s.listarAgentes(ctx);
-    expect(vistas).toHaveLength(28);
+    expect(vistas).toHaveLength(29);
     const porId = new Map(vistas.map((v) => [v.manifest.id, v]));
     expect(porId.get("cobros")!.disponible).toBe(true);
     expect(porId.get("compliance")!.disponible).toBe(false); // retail no expone documents
@@ -134,6 +135,16 @@ describe("Servicio del SaaS", () => {
       return { s, pedidos };
     }
     const hola = [{ role: "user" as const, content: "¿Qué encontraste?" }];
+
+    it("los errores se identifican por NOMBRE (las rutas no pueden usar instanceof: Next duplica los módulos entre bundles)", async () => {
+      const e1 = await servicioDemo().chatear(ctx, "cobros", hola).catch((e) => e);
+      expect(esError(e1, "ErrorIANoDisponible")).toBe(true);
+      expect(e1.name).toBe("ErrorIANoDisponible");
+      const e2 = await conIA().s.chatear(ctx, "nadie", hola).catch((e) => e);
+      expect(esError(e2, "ErrorDeValidacion")).toBe(true);
+      expect(esError(e2, "ErrorIANoDisponible")).toBe(false);
+      expect(esError("texto", "ErrorDeValidacion")).toBe(false);
+    });
 
     it("sin proveedor de IA → ErrorIANoDisponible", async () => {
       await expect(servicioDemo().chatear(ctx, "cobros", hola)).rejects.toBeInstanceOf(ErrorIANoDisponible);

@@ -20,11 +20,13 @@ export function crearCoreStorePrisma(db: PrismaLike): CoreStore {
   return {
     recommendations: {
       async save(_ctx: TenantCtx, r: Recomendacion) {
-        await db.recomendacion.create({
-          data: {
-            id: r.id, tenantId: r.tenantId, agentId: r.agentId, tipo: r.tipo,
-            estado: r.estado, dedupKey: r.dedupKey ?? null, creadoEn: fecha(r.creadoEn), data: r,
-          },
+        // Upsert por id (idempotente): el motor refresca las recomendaciones vivas en vez de duplicarlas.
+        // `tenantId` y `creadoEn` no se tocan en el update.
+        const cols = { agentId: r.agentId, tipo: r.tipo, estado: r.estado, dedupKey: r.dedupKey ?? null, data: r };
+        await db.recomendacion.upsert({
+          where: { id: r.id },
+          create: { id: r.id, tenantId: r.tenantId, creadoEn: fecha(r.creadoEn), ...cols },
+          update: cols,
         });
         return r;
       },

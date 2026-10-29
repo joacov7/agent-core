@@ -17,6 +17,7 @@ packages/
   agents/        @agent-core/agents        catálogo de agentes reutilizables (usan solo contracts + core)
   store-prisma/  @agent-core/store-prisma  adapter de persistencia del CoreStore sobre Postgres (Prisma)
   ai-openai/     @agent-core/ai-openai     proveedor de IA para APIs compatibles con OpenAI (Ollama local o nube)
+  notify-telegram/ @agent-core/notify-telegram notificador por Telegram (solo envía)
 ```
 
 Las **apps** (Regionales, jurídico, contable, …) viven fuera: aportan adapters
@@ -68,7 +69,7 @@ apps/
     presupuesto por tenant y por agente (falla cerrado al superarlo) y atribución
     de gasto (tarifario tokens→costo, persistido en `GastoStore`). Agnóstico del
     proveedor concreto.
-- ✅ `@agent-core/agents`: catálogo con 28 agentes, **todos con `run()` funcional**.
+- ✅ `@agent-core/agents`: catálogo con 29 agentes, **todos con `run()` funcional**.
   - dirección: `ceo`, `jefe` (Jefe de Gabinete), `analista` — leen las
     recomendaciones ya generadas (vía `CoreStore`) y las resumen/priorizan.
   - clientes: `crm`, `oportunidades`, `seguimiento` (pipeline), `riesgo_abandono`
@@ -101,6 +102,9 @@ apps/
   un `AiCompletionProvider` intercambiable (`@agent-core/ai-openai`): Ollama local gratis por
   defecto, o cualquier API compatible con OpenAI, siempre detrás del AI Gateway (presupuesto +
   atribución de gasto).
+- ✅ **Asistente personal proactivo** (`asistente`, "Gael"): por Telegram manda el resumen de la mañana y
+  avisa lo urgente (una vez, con silencio nocturno y tope diario). Solo avisa, no actúa. El motor ahora
+  **deduplica** las recomendaciones vivas (antes cada corrida las duplicaba).
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
   capacidades ⊇ requeridas + modelo de negocio compatible.
 - ✅ `@agent-core/app-ejemplo`: adapter de referencia in-memory (providers con
@@ -108,10 +112,10 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**364 tests verdes** (355 sin DB + 9 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
+**406 tests verdes** (397 sin DB + 9 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
 (presupuesto/atribución) + adapter de persistencia Prisma + proveedor de IA OpenAI-compatible + capa de servicio del SaaS (incl. chat)
-+ los 28 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
++ los 29 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
 y marketplace).
 
 ## Principios
@@ -152,7 +156,7 @@ npm run publish:all     # publica los 3 paquetes privados
 
 ## Publicación
 
-Los paquetes `@agent-core/*` (`contracts`, `core`, `agents`, `store-prisma`, `ai-openai`) se
+Los paquetes `@agent-core/*` (`contracts`, `core`, `agents`, `store-prisma`, `ai-openai`, `notify-telegram`) se
 publican como **privados** (`publishConfig.access: restricted`, `0.1.0`, solo `dist/`
 + README); las apps y la raíz quedan `private`. Detalles, orden y registry (npmjs /
 GitHub Packages) en [`PUBLISHING.md`](./PUBLISHING.md).

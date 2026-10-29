@@ -11,6 +11,7 @@ El monorepo publica **cuatro paquetes privados** (scoped `@agent-core/*`); las a
 | `@agent-core/agents` | catálogo de agentes |
 | `@agent-core/store-prisma` | adapter de persistencia del CoreStore sobre Postgres |
 | `@agent-core/ai-openai` | proveedor de IA para APIs compatibles con OpenAI (Ollama, vLLM, OpenAI…) |
+| `@agent-core/notify-telegram` | notificador por Telegram (Bot API), solo envía |
 
 Todos son `0.1.0`, ESM (`"type": "module"`), publican solo `dist/` + `README.md`
 (`store-prisma` también `prisma/`) y llevan `publishConfig.access: "restricted"`.
@@ -18,7 +19,7 @@ Las dependencias internas están fijadas con rango semver (`^0.1.0`), no `*`.
 
 ## Orden
 
-`contracts` → `core` → `agents` → `store-prisma` → `ai-openai` (por sus dependencias). Los scripts
+`contracts` → `core` → `agents` → `store-prisma` → `ai-openai` → `notify-telegram` (por sus dependencias). Los scripts
 de la raíz ya respetan ese orden.
 
 ## Pasos
