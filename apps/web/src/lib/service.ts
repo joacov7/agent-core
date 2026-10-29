@@ -99,6 +99,8 @@ export class ErrorDeValidacion extends Error {
   override name = "ErrorDeValidacion";
 }
 const CERRADAS = new Set(["executed", "rejected", "cancelled", "expired", "failed"]);
+/** Fuera de la bandeja: terminadas (un `failed` sí se muestra: se puede reintentar). */
+const TERMINADAS = new Set(["executed", "rejected", "cancelled", "expired"]);
 
 /** Recorta texto de datos del negocio antes de ponerlo en el prompt. */
 const corto = (v: unknown, max = 220) => {
@@ -255,7 +257,10 @@ export function crearServicio(deps: ServicioDeps): Servicio {
     },
 
     async listarRecomendaciones(ctx) {
-      const { items } = await store.recommendations.list(ctx);
+      const { items: todas } = await store.recommendations.list(ctx);
+      // La bandeja es lo PENDIENTE: lo expirado (la condición ya no existe), cancelado, rechazado o
+      // ejecutado queda en el historial del store, no acá.
+      const items = todas.filter((r) => !TERMINADAS.has(r.estado));
       // Ordena por prioridad (1 = máxima) y, a igualdad, por severidad.
       const peso: Record<string, number> = { critica: 0, importante: 1, oportunidad: 2 };
       const ordenadas = [...items].sort(
