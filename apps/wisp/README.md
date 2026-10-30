@@ -9,8 +9,8 @@ servicios ni modifican abonos). Cadencia: `suscripcion`.
 Los tests corren contra el **esquema real** de guaynet: el volcado de aplicar sus **43 migraciones** de Alembic
 (`rama claude/wisp-management-system-TTAsI`, la que incluye Seguridad, Soporte, Órdenes de trabajo, Inventario, etc.). La rama `main`
 de guaynet está desactualizada (1 migración): **no es la que corre en producción**. Este adapter solo usa las tablas del
-**servicio de internet** (`clients`, `invoices`, `payments`, `mikrotik_routers`, `ubiquiti_devices`); el módulo **Seguridad**
-(`sec_*`) todavía no está conectado (ver más abajo).
+**servicio de internet** (`clients`, `invoices`, `payments`, `mikrotik_routers`, `ubiquiti_devices`). El módulo **Seguridad**
+(`sec_*`) tiene su propio adapter (`crearProvidersSeguridad`, ver "Línea Seguridad" más abajo).
 
 ## Qué mapea
 
@@ -61,6 +61,34 @@ está conectada.
 **3. Levantar y probar**: encendé agentes en `/consola`, **Correr equipo**, y mirá `/bandeja`
 (cada hallazgo dice a qué abonado se refiere).
 
+## Línea Seguridad (módulo `sec_*` de guaynet)
+Internet y seguridad son **dos líneas de negocio distintas**, y se modelan como **dos tenants**: cada una con su adapter, su
+configuración de agentes y su bandeja (así cobros y morosidad quedan solo en internet).
+`crearProvidersSeguridad({ db, tenantId })` lee el módulo de alarmas y expone:
+
+| guaynet | Canónico | Agentes |
+|---|---|---|
+| `sec_alerts` abiertas (pánico, coacción, intrusión, conexión perdida…) | `incidents` (estado nuevo / reconocido) | **Guardia**, Sistemas |
+| `sec_events`: batería baja, corte de energía, panel sin comunicación o sabotaje **sin su "restaurado"** (último mes) | `incidents` (falla abierta) | Guardia, Sistemas |
+| contratos (`contract_end`), garantías de equipos y certificados por vencer | `agenda` | Agenda |
+
+- **No expone cobros ni clientes:** la seguridad **todavía no se factura** en guaynet (las facturas son solo de internet), así que
+  no hay nada que cobrar ni vigilar. Cuando empiece a facturarse, hay que sumar eso.
+- **La Guardia es la clave:** el triage común ordena por impacto y un pánico solo llega a ~65/100 (la crítica empieza en 70);
+  la Guardia mira el **tiempo**: pánico/coacción/intrusión sin que nadie lo tome en **5 min** es crítico (error: 30 min, warning: 4 h),
+  y "en atención" demasiado tiempo (30 min / 2 h) es importante.
+- **Privacidad por diseño:** los títulos son neutros ("Pánico: sin atender hace 10 min"); el nombre de la propiedad viaja solo en
+  `metadata.titular`. Con permisos **por columna** el rol de Postgres **no puede leer** PINs, palabras seguras, tokens de la app o del
+  portal, vínculos de Telegram, mensajes crudos de la central, domicilios ni coordenadas (probado contra el esquema real).
+- **Fechas de día completo** (contratos, garantías): valen hasta el **final del día** en Argentina. Con la fecha a las 00:00 UTC, el
+  agente de Agenda marcaría "vencido" un contrato durante su propio día de vencimiento.
+- Las suscripciones canceladas o pendientes de instalación no generan avisos.
+
+**Permisos:** corré también [`sql/solo-lectura-seguridad.sql`](./sql/solo-lectura-seguridad.sql) (después de `solo-lectura.sql`).
+
+**Ojo, a calibrar:** el agente de Agenda avisa a **7 días** (importante a 2), pensado para turnos y audiencias. Para renovar un
+contrato es poco aviso: se puede ampliar (es un ajuste del agente).
+
 ## Qué esperar (y qué ajustar con datos reales)
 - **Riesgo de abandono** compara los días desde el último pago con tu frecuencia habitual
   (≈30 días). Un abonado que paga tarde en el ciclo puede salir como "en riesgo" (severidad más
@@ -74,6 +102,7 @@ está conectada.
 
 ## Tests
 - `src/wisp.unit.test.ts`: mapeo, paginación, guardas de solo lectura y aislamiento de tenant (sin DB).
+- `src/seguridad.unit.test.ts` y `src/seguridad.pg.test.ts`: lo mismo para la línea Seguridad (incluye que el rol no pueda leer nada sensible).
 - `src/wisp.pg.test.ts`: **contra Postgres real** con el **esquema real** de guaynet (`test/guaynet-schema.sql`,
   volcado de sus 43 migraciones): consultas, el rol de solo lectura con el SQL de arriba **tal cual**
   (no puede escribir ni leer `users`/claves) y los agentes reales sobre los datos. Se activa con

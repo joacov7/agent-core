@@ -86,6 +86,9 @@ apps/
     `logistica` (logistics), `produccion` (production), `sistemas` (incidents:
     triage determinístico de incidentes de software — severidad × frecuencia ×
     usuarios × recencia × entorno; solo prioriza, no toca código).
+  - vigilancia: `guardia` (incidents): avisa cuando un incidente grave —pánico, intrusión, equipo caído— pasa los
+    minutos que tolera su nivel sin que nadie lo tome. Mira el TIEMPO, no el impacto (el triage de `sistemas` no
+    habría llevado un pánico a crítico).
   - organización: `agenda` (agenda), `compliance` (agenda + documents: obligaciones
     regulatorias por vencer sin documento de respaldo), `rrhh` (staff: hitos de
     personal — fin de período de prueba, revisiones de desempeño), `tareas`.
@@ -112,7 +115,7 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**406 tests verdes** (397 sin DB + 9 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
+**436 tests verdes** (422 sin DB + 14 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
 (presupuesto/atribución) + adapter de persistencia Prisma + proveedor de IA OpenAI-compatible + capa de servicio del SaaS (incl. chat)
 + los 30 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
