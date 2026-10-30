@@ -2,7 +2,7 @@ import type {
   Agent, AgentContext, AgentManifest, AgentRunOutput, RecomendacionNueva,
 } from "@agent-core/contracts";
 import { calcularPrioridad, confianzaPorOrigen } from "@agent-core/core";
-import { clasificarEvento } from "./agenda.logic.js";
+import { clasificarEvento, umbralesDeConfig } from "./agenda.logic.js";
 
 export * from "./agenda.logic.js";
 
@@ -25,12 +25,20 @@ export const manifestAgenda: AgentManifest = {
   toolsDeEscritura: [],
   riesgo: "bajo",
   autonomiaMaxima: "manual",
+  configSchema: {
+    type: "object",
+    properties: {
+      diasProximo: { type: "integer", minimum: 0, maximum: 365, default: 2, description: "Días de anticipación para marcar IMPORTANTE." },
+      diasAviso: { type: "integer", minimum: 0, maximum: 365, default: 7, description: "Días de anticipación para el aviso temprano (oportunidad)." },
+    },
+  },
 };
 
 export const agenteAgenda: Agent = {
   manifest: manifestAgenda,
-  async run({ ctx, providers }: AgentContext): Promise<AgentRunOutput> {
+  async run({ ctx, providers, config }: AgentContext): Promise<AgentRunOutput> {
     const agenda = providers.agenda;
+    const umbrales = umbralesDeConfig(config);
     if (!agenda) return { recomendaciones: [] };
 
     const hoy = ctx.now?.() ?? new Date();
@@ -39,7 +47,7 @@ export const agenteAgenda: Agent = {
     const recomendaciones: RecomendacionNueva[] = [];
 
     for (const evento of items) {
-      const alerta = clasificarEvento(evento.inicia, hoy);
+      const alerta = clasificarEvento(evento.inicia, hoy, umbrales);
       if (!alerta) continue;
 
       recomendaciones.push({

@@ -19,6 +19,11 @@ export interface ServicioDeps {
   modeloNegocio?: BusinessModel;
   /** IA para el chat con los agentes (ya envuelta por el AI Gateway). Sin esto, el chat no está disponible. */
   ai?: AiGateway;
+  /**
+   * Config base de los agentes de esta línea (la usan los que no tienen ajustes propios guardados): cada
+   * agente lee solo sus claves, p.ej. `{ diasProximo, diasAviso }` del agente de Agenda.
+   */
+  config?: Record<string, unknown>;
 }
 
 /** Una recomendación con el nombre de a quién se refiere (si se pudo resolver). */
@@ -148,12 +153,13 @@ export function promptDeAgente(v: AgenteVista, recos: Recomendacion[]): string {
 }
 
 export function crearServicio(deps: ServicioDeps): Servicio {
-  const { store, providers, modeloNegocio, ai } = deps;
+  const { store, providers, modeloNegocio, ai, config } = deps;
   let cola: Promise<void> = Promise.resolve();
   const correrUna = (ctx: TenantCtx) =>
     runSeleccion({
       catalogo, ctx, providers, store,
       ...(modeloNegocio ? { modeloNegocio } : {}),
+      ...(config ? { config } : {}),
     });
 
   /**

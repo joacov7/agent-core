@@ -34,6 +34,22 @@ export function leerLineas(env: Env): Linea[] {
   return [internet, { id: "seguridad", tenantId: tenantSeguridad, nombre: "Seguridad", icono: "🛡️" }];
 }
 
+/**
+ * Config base de los agentes de una línea. Seguridad avisa los vencimientos (contratos, garantías,
+ * certificados) con tiempo para RENOVAR: a 30 días como aviso y a 15 como importante (el default del
+ * agente de Agenda, 7 y 2 días, está pensado para turnos y audiencias). Se ajusta con
+ * `SEGURIDAD_AVISO_DIAS` y `SEGURIDAD_URGENTE_DIAS`; un valor inválido se ignora.
+ */
+export function configAgentesDe(linea: Linea, env: Env): Record<string, unknown> {
+  if (linea.id !== "seguridad") return {};
+  const dias = (v: string | undefined, defecto: number) => {
+    const n = Number(v);
+    return v?.trim() && Number.isInteger(n) && n >= 0 && n <= 365 ? n : defecto;
+  };
+  const diasProximo = dias(env.SEGURIDAD_URGENTE_DIAS, 15);
+  return { diasProximo, diasAviso: Math.max(dias(env.SEGURIDAD_AVISO_DIAS, 30), diasProximo) };
+}
+
 /** Valor de una cookie en un header `Cookie`. */
 export function leerCookie(header: string | null | undefined, nombre: string): string | undefined {
   if (!header) return undefined;

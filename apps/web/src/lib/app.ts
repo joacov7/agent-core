@@ -1,7 +1,7 @@
 import { crearApp } from "@agent-core/app-ejemplo";
 import { crearServicio, type Servicio } from "@/lib/service";
 import { crearIA } from "@/lib/ia";
-import { LINEAS } from "@/lib/lineas";
+import { LINEAS, configAgentesDe } from "@/lib/lineas";
 import { crearProvidersSeguridad, crearProvidersWisp, MODELO_NEGOCIO_SEGURIDAD, MODELO_NEGOCIO_WISP } from "@agent-core/app-wisp";
 import { poolWisp } from "@/lib/wisp";
 
@@ -38,7 +38,7 @@ function crearInstancia(): Instancia {
       linea.id === "internet" && pool
         ? crearServicio({ ...comun, providers: crearProvidersWisp({ db: pool, tenantId: linea.tenantId }), modeloNegocio: MODELO_NEGOCIO_WISP })
         : linea.id === "seguridad" && pool
-          ? crearServicio({ ...comun, providers: crearProvidersSeguridad({ db: pool, tenantId: linea.tenantId }), modeloNegocio: MODELO_NEGOCIO_SEGURIDAD })
+          ? crearServicio({ ...comun, providers: crearProvidersSeguridad({ db: pool, tenantId: linea.tenantId }), modeloNegocio: MODELO_NEGOCIO_SEGURIDAD, config: configAgentesDe(linea, process.env) })
           : crearServicio({ ...comun, providers: dev.providers, modeloNegocio: dev.modeloNegocio });
   }
   return { servicios, fuente: wispUrl ? "wisp" : "demo" };

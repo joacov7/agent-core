@@ -68,6 +68,8 @@ se guarda en una cookie). Así los agentes de cobro (cobros, morosidad…) exist
 | Se cobra | sí (facturas) | **todavía no** (por eso no hay agentes de cobro) |
 
 Para activarla: corré `apps/wisp/sql/solo-lectura-seguridad.sql` además del de internet, y poné `SEGURIDAD=on` en el `.env`.
+En Seguridad, la Agenda avisa los vencimientos (contratos, garantías, certificados) con **30 días** de anticipación y los marca
+"importantes" a los 15; se ajusta con `SEGURIDAD_AVISO_DIAS` y `SEGURIDAD_URGENTE_DIAS`. Internet conserva el default del agente (7 y 2).
 Cada línea lleva su estado de avisos (un resumen por mañana y por línea) y puede tener su **propio chat de Telegram**
 (`TELEGRAM_CHAT_IDS_SEGURIDAD`, p.ej. el equipo de guardia). Los mensajes llevan la línea en el encabezado ("· 🛡️ Seguridad").
 El **nombre del cliente** de cada hallazgo aparece en la bandeja de la app, pero **no** en Telegram (salvo `AVISOS_NOMBRES=on`).
