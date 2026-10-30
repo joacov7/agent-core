@@ -70,6 +70,22 @@ describe("Servicio del SaaS", () => {
     expect(bandeja.every((r) => r.titular === undefined)).toBe(true);
   });
 
+  it("lo que deja de detectarse sale de la bandeja (p.ej. el cobro se pagó), sin duplicados al volver a correr", async () => {
+    const app = crearApp();
+    const s = crearServicio({ store: app.store, providers: app.providers, modeloNegocio: app.modeloNegocio });
+    await s.setAgente(ctx, { agentId: "cobros", encendido: true, autonomia: "manual" });
+    await s.correr(ctx); await s.correr(ctx);
+    const antes = await s.listarRecomendaciones(ctx);
+    expect(antes.filter((r) => r.agentId === "cobros")).toHaveLength(1);         // dos corridas, una sola recomendación
+
+    // El cliente paga: el cobro deja de estar vencido.
+    const sinCobros = { ...app.providers, receivables: { pending: async () => ({ items: [] }), overdue: async () => ({ items: [] }) } };
+    const s2 = crearServicio({ store: app.store, providers: sinCobros, modeloNegocio: app.modeloNegocio });
+    await s2.correr(ctx);
+    expect((await s2.listarRecomendaciones(ctx)).filter((r) => r.agentId === "cobros")).toHaveLength(0); // ya no figura
+    expect((await s2.listarAgentes(ctx)).find((v) => v.manifest.id === "cobros")!.novedades).toBe(0);
+  });
+
   it("listarRecomendaciones devuelve la bandeja ordenada por prioridad", async () => {
     const s = servicioDemo();
     expect(await s.listarRecomendaciones(ctx)).toHaveLength(0); // vacía antes de correr

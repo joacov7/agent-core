@@ -7,6 +7,7 @@ import { capacidadesDeProviders } from "./capacidades.js";
 import { seleccionDeStore, type PorDefecto } from "./seleccion.js";
 import { relojPorDefecto, generarIdPorDefecto, type Reloj, type GenerarId } from "./ids.js";
 import { ESTADOS_VIVOS } from "../recommendations/recommendations.logic.js";
+import type { EstadoReco } from "@agent-core/contracts";
 
 export * from "./capacidades.js";
 export * from "./enforcement.js";
@@ -119,10 +120,30 @@ export async function runAgent(input: RunAgentInput): Promise<RunAgentResult> {
     recomendaciones.push(persistida);
   }
 
+  // Reconciliación: cada corrida es una FOTO completa de lo que el agente detecta AHORA. Lo que
+  // antes estaba abierto y ya no aparece (un cobro que se pagó, una alerta que se resolvió) se
+  // EXPIRA: si no, la bandeja y los avisos seguirían reportando condiciones que ya no existen.
+  // También limpia duplicados vivos viejos de la misma clave. Solo toca los estados automáticos
+  // (new/analyzing/proposed) de ESTE agente: lo que espera una decisión humana (pending_approval,
+  // postponed) o ya avanzó (approved, executed…) no se toca. Sin dedupKey no se puede reconciliar.
+  const emitidas = new Set(
+    salida.recomendaciones.flatMap((r) => (r.dedupKey ? [`${r.agentId}|${r.dedupKey}`] : [])),
+  );
+  for (const e of existentes) {
+    if (e.agentId !== input.agent.manifest.id || !e.dedupKey || !AUTOMATICAS.includes(e.estado)) continue;
+    const clave = `${e.agentId}|${e.dedupKey}`;
+    const vigente = emitidas.has(clave) && vivas.get(clave)?.id === e.id; // la que quedó refrescada
+    if (vigente) continue;
+    await input.store.recommendations.save(input.ctx, { ...e, estado: "expired", actualizadoEn: now().toISOString() });
+  }
+
   return salida.resumen === undefined
     ? { recomendaciones }
     : { recomendaciones, resumen: salida.resumen };
 }
+
+/** Estados que el motor maneja solo (y por eso puede expirar si la condición desaparece). */
+const AUTOMATICAS: EstadoReco[] = ["new", "analyzing", "proposed"];
 
 /**
  * Corre SOLO los agentes encendidos para el tenant (activables ∩ config del store),

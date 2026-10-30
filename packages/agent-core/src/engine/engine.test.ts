@@ -298,3 +298,78 @@ describe("runAgent: dedup de recomendaciones vivas", () => {
     expect(store._recos[0]!.titulo).toBe("otra versión");
   });
 });
+
+describe("runAgent: reconciliación (expira lo que ya no se detecta)", () => {
+  const conClave = (clave: string, over: Partial<RecomendacionNueva> = {}): RecomendacionNueva => ({
+    agentId: "fake", tipo: "cobro_vencido", titulo: `Cobrar ${clave}`, estado: "proposed",
+    severidad: "importante", confianza: 90, prioridad: 2, dedupKey: `fake:${clave}`, ...over,
+  });
+  let n = 0;
+  const det = () => ({ generarId: () => `id-${++n}`, now: () => new Date("2026-02-01T00:00:00.000Z") });
+  const correr = (store: StoreFake, claves: string[], agentId = "fake") =>
+    runAgent({
+      agent: { manifest: mani({ id: agentId }), run: async () => ({ recomendaciones: claves.map((c) => conClave(c, { agentId })) }) },
+      ctx, providers: {}, store, deps: det(),
+    });
+  const estados = (store: StoreFake) => Object.fromEntries(store._recos.map((r) => [r.dedupKey, r.estado]));
+
+  it("lo que dejó de detectarse (p.ej. el cobro se pagó) pasa a expired; lo que sigue, no", async () => {
+    n = 0;
+    const store = crearStore();
+    await correr(store, ["a", "b", "c"]);
+    await correr(store, ["a", "c"]);                       // "b" ya no se detecta
+    expect(estados(store)).toEqual({ "fake:a": "proposed", "fake:b": "expired", "fake:c": "proposed" });
+    expect(store._recos.find((r) => r.dedupKey === "fake:b")!.actualizadoEn).toBeDefined();
+    await correr(store, []);                               // y si ya no detecta nada, expira todo
+    expect(Object.values(estados(store))).toEqual(["expired", "expired", "expired"]);
+  });
+
+  it("si vuelve a detectarse tras expirar, es una recomendación NUEVA (la expirada queda en el historial)", async () => {
+    n = 0;
+    const store = crearStore();
+    await correr(store, ["a"]);
+    await correr(store, []);
+    await correr(store, ["a"]);
+    expect(store._recos.map((r) => r.estado)).toEqual(["expired", "proposed"]);
+    expect(new Set(store._recos.map((r) => r.id)).size).toBe(2);
+  });
+
+  it("NO toca lo que espera una decisión humana ni lo que ya avanzó, ni lo de otros agentes ni lo sin dedupKey", async () => {
+    n = 0;
+    const store = crearStore();
+    await correr(store, ["pend", "pos", "apr", "ejec", "nueva"]);
+    const set = (k: string, estado: Recomendacion["estado"]) => {
+      const i = store._recos.findIndex((r) => r.dedupKey === `fake:${k}`);
+      store._recos[i] = { ...store._recos[i]!, estado };
+    };
+    set("pend", "pending_approval"); set("pos", "postponed"); set("apr", "approved"); set("ejec", "executed");
+    await correr(store, [], "otro");                       // otro agente corre vacío: no toca lo de "fake"
+    await runAgent({ agent: { manifest: mani({}), run: async () => ({ recomendaciones: [{ ...conClave("sin"), dedupKey: null }] }) }, ctx, providers: {}, store, deps: det() });
+    await correr(store, []);                               // "fake" corre vacío
+    expect(estados(store)).toMatchObject({
+      "fake:pend": "pending_approval", "fake:pos": "postponed", "fake:apr": "approved", "fake:ejec": "executed",
+      "fake:nueva": "expired",
+    });
+    expect(store._recos.find((r) => r.dedupKey === null)!.estado).toBe("proposed"); // sin clave: intacta
+  });
+
+  it("limpia duplicados vivos viejos de la misma clave (datos anteriores al dedup)", async () => {
+    n = 0;
+    const store = crearStore();
+    const vieja = { ...conClave("dup"), id: "v1", tenantId: "t1", creadoEn: "2026-01-01T00:00:00.000Z" };
+    const nueva = { ...conClave("dup"), id: "v2", tenantId: "t1", creadoEn: "2026-01-02T00:00:00.000Z" };
+    store._recos.push(vieja as Recomendacion, nueva as Recomendacion);
+    await correr(store, ["dup"]);
+    expect(store._recos.find((r) => r.id === "v2")!.estado).toBe("proposed");   // la más nueva sigue viva y refrescada
+    expect(store._recos.find((r) => r.id === "v1")!.estado).toBe("expired");    // la vieja se limpia
+  });
+
+  it("si el agente FALLA no se expira nada (no hay foto confiable)", async () => {
+    n = 0;
+    const store = crearStore();
+    await correr(store, ["a"]);
+    const roto: Agent = { manifest: mani({}), run: async () => { throw new Error("base caída"); } };
+    await expect(runAgent({ agent: roto, ctx, providers: {}, store, deps: det() })).rejects.toThrow("base caída");
+    expect(estados(store)).toEqual({ "fake:a": "proposed" });
+  });
+});
