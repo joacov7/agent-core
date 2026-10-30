@@ -4,6 +4,7 @@ import { crearIA } from "@/lib/ia";
 import { LINEAS, configAgentesDe } from "@/lib/lineas";
 import { crearProvidersSeguridad, crearProvidersWisp, MODELO_NEGOCIO_SEGURIDAD, MODELO_NEGOCIO_WISP } from "@agent-core/app-wisp";
 import { poolWisp } from "@/lib/wisp";
+import { persistirStore, rutaDeStore } from "@/lib/persistencia";
 
 // Wiring de la app. DEV: usa el adapter de referencia in-memory (retail) para que el
 // SaaS corra sin DB ni claves y veas la API funcionando.
@@ -24,6 +25,15 @@ const g = globalThis as unknown as { __agentcore?: Instancia };
 
 function crearInstancia(): Instancia {
   const dev = crearApp();
+  // Persistencia a archivo (agentes encendidos, alias, bandeja, memoria, gasto de IA): sin esto un reinicio lo borra todo.
+  const rutaStore = rutaDeStore(process.env);
+  if (rutaStore) {
+    const p = persistirStore(dev.store, { ruta: rutaStore });
+    console.log(`[store] persistente en ${rutaStore} · ${p.cargadas.agentes} agente(s) configurado(s), ${p.cargadas.recomendaciones} recomendación(es)` +
+      (p.cargadas.descartadas ? ` (${p.cargadas.descartadas} vieja(s) descartada(s))` : ""));
+  } else {
+    console.warn("[store] STORE_PERSISTENTE=off: la configuración y la bandeja se pierden al reiniciar.");
+  }
   const ia = crearIA(process.env, dev.store);
   const wispUrl = process.env.WISP_DATABASE_URL;
   const comun = { store: dev.store, ...(ia ? { ai: ia } : {}) }; // un solo store en memoria: sus filas ya van separadas por tenant

@@ -74,6 +74,16 @@ Cada línea lleva su estado de avisos (un resumen por mañana y por línea) y pu
 (`TELEGRAM_CHAT_IDS_SEGURIDAD`, p.ej. el equipo de guardia). Los mensajes llevan la línea en el encabezado ("· 🛡️ Seguridad").
 El **nombre del cliente** de cada hallazgo aparece en la bandeja de la app, pero **no** en Telegram (salvo `AVISOS_NOMBRES=on`).
 
+## Persistencia
+Lo que configurás y lo que los agentes encuentran **sobrevive a los reinicios**: qué agentes están encendidos (y su alias y
+autonomía), la bandeja con su historial, la memoria de rechazos y el gasto de IA (el tope de presupuesto no se "resetea").
+Se guarda en `.agentcore/store.json` (`STORE_ARCHIVO` para cambiarlo) con permisos 600 —la bandeja tiene datos de clientes—,
+de forma atómica y junta las ráfagas de cambios (~0,5 s). Un corte brusco pierde, como mucho, esos últimos instantes.
+- Las recomendaciones **terminales** (ejecutadas, rechazadas, vencidas…) de más de 90 días se descartan al arrancar; las vivas no.
+- Si el archivo está dañado o es de otro formato, la app **arranca vacía y avisa** en el log, sin tumbarse.
+- Es para **una sola instancia** de la app. Con varias instancias o volumen real, usá `@agent-core/store-prisma` (Postgres).
+- `STORE_PERSISTENTE=off` vuelve al modo en memoria (útil para demos).
+
 ## Avisos por Telegram (Asistente personal)
 **Gael**, el Asistente personal, es el agente proactivo: te escribe por Telegram el **resumen de la
 mañana** y te **avisa al instante** de lo urgente. **Solo avisa**: no ejecuta acciones ni toca ningún
