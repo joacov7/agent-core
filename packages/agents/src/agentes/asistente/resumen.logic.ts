@@ -18,6 +18,8 @@ export interface OpcionesAviso {
   incluirNombres?: boolean;
   /** Link a la bandeja (opcional). */
   url?: string;
+  /** Línea de negocio a la que pertenece el aviso ("🛡️ Seguridad"): va en el encabezado. */
+  etiqueta?: string;
 }
 
 const ORDEN: Severidad[] = ["critica", "importante", "oportunidad"];
@@ -56,7 +58,7 @@ const masUrgente = (a: Recomendacion, b: Recomendacion) => a.prioridad - b.prior
 /** Resumen de la mañana. */
 export function componerResumen(recos: Recomendacion[], o: OpcionesAviso): string {
   const vivas = abiertas(recos);
-  const cab = `☀️ Buen día · resumen del ${diaMes(o.fecha)}`;
+  const cab = `☀️ Buen día · resumen del ${diaMes(o.fecha)}${o.etiqueta ? ` · ${o.etiqueta}` : ""}`;
   const pie = o.url ? [`\nAbrí la bandeja: ${o.url}`] : [];
   if (vivas.length === 0) return [cab, "", "Todo tranquilo: no hay hallazgos abiertos.", ...pie].join("\n");
 
@@ -88,7 +90,7 @@ export function componerResumen(recos: Recomendacion[], o: OpcionesAviso): strin
 /** Aviso urgente: solo lo NUEVO y grave. `nuevas` ya viene filtrado por quien llama. */
 export function componerAlerta(nuevas: Recomendacion[], o: OpcionesAviso): string {
   const orden = [...nuevas].sort(masUrgente);
-  const lineas = [`🚨 Aviso urgente (${orden.length})`];
+  const lineas = [`🚨 Aviso urgente (${orden.length})${o.etiqueta ? ` · ${o.etiqueta}` : ""}`];
   for (const r of orden.slice(0, MAX_ALERTAS)) lineas.push(`• ${quien(r, o)}: ${conTitular(r, o)}`);
   if (orden.length > MAX_ALERTAS) lineas.push(`• …y ${orden.length - MAX_ALERTAS} más en la bandeja`);
   if (o.url) lineas.push(`\nBandeja: ${o.url}`);

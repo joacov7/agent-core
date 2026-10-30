@@ -43,6 +43,12 @@ describe("componerResumen", () => {
     expect(con).toContain("— Ana Pérez");
   });
 
+  it("la etiqueta de línea va en el encabezado del resumen y de la alerta", () => {
+    expect(componerResumen([], { ...base, etiqueta: "🛡️ Seguridad" }).split("\n")[0]).toBe("☀️ Buen día · resumen del 29/10 · 🛡️ Seguridad");
+    expect(componerAlerta([reco()], { ...base, etiqueta: "🌐 Internet" }).split("\n")[0]).toBe("🚨 Aviso urgente (1) · 🌐 Internet");
+    expect(componerResumen([], base).split("\n")[0]).toBe("☀️ Buen día · resumen del 29/10");
+  });
+
   it("recorta a 4 agentes por severidad y agrega el link", () => {
     const recos = ["a", "b", "c", "d", "e", "f"].map((a) => reco({ agentId: a }));
     const t = componerResumen(recos, { ...base, url: "http://localhost:3100/bandeja" });

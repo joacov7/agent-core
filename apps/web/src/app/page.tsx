@@ -1,5 +1,7 @@
-import { servicio, FUENTE } from "@/lib/app";
-import { tenantPorDefecto } from "@/lib/tenant";
+import { cookies } from "next/headers";
+import { servicioDe, FUENTE } from "@/lib/app";
+import { LINEAS } from "@/lib/lineas";
+import { tenantDeCookie } from "@/lib/tenant";
 import { PanelAvisos } from "@/components/PanelAvisos";
 import { Avatar } from "@/components/Avatar";
 import { C, CAT_LABEL, CAT_ORDEN, ESTADO } from "@/lib/ui";
@@ -9,8 +11,9 @@ export const dynamic = "force-dynamic";
 // Server component: la vista de equipo. Muestra quién está en el equipo del tenant, qué
 // está haciendo cada agente ahora y cuántas novedades tiene.
 export default async function Home() {
-  const ctx = { tenantId: tenantPorDefecto() };
-  const agentes = await servicio.listarAgentes(ctx);
+  const ctx = tenantDeCookie((await cookies()).get("linea")?.value); // la línea que eligió el selector
+  const linea = LINEAS.find((l) => l.tenantId === ctx.tenantId)!;
+  const agentes = await servicioDe(ctx.tenantId).listarAgentes(ctx);
   const disponibles = agentes.filter((a) => a.disponible);
   const activos = disponibles.filter((a) => a.encendido);
   const novedades = agentes.reduce((n, a) => n + a.novedades, 0);
@@ -20,7 +23,7 @@ export default async function Home() {
       <p style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, letterSpacing: ".16em", textTransform: "uppercase", color: C.accent, margin: 0 }}>
         agent-core · equipo
       </p>
-      <h1 style={{ fontSize: 34, margin: "8px 0 6px", letterSpacing: "-.02em" }}>Tu equipo IA</h1>
+      <h1 style={{ fontSize: 34, margin: "8px 0 6px", letterSpacing: "-.02em" }}>Tu equipo IA{LINEAS.length > 1 ? ` · ${linea.icono} ${linea.nombre}` : ""}</h1>
       <p style={{ color: C.soft, marginTop: 0 }}>
         Tenant <b>{ctx.tenantId}</b> · {activos.length} en guardia de {disponibles.length} disponibles
         {novedades > 0 ? ` · ${novedades} novedad${novedades === 1 ? "" : "es"} para revisar` : ""}.

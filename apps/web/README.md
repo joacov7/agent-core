@@ -38,6 +38,7 @@ npm run dev          # http://localhost:3000
   en su voz y **solo con lo que él mismo encontró** (sus recomendaciones abiertas). No puede
   ejecutar acciones desde el chat. Ver "IA del chat" más abajo.
 - **API**:
+  - `GET  /api/lineas` → las líneas (internet, seguridad) y la activa en este navegador. El resto de la API usa la línea de la cookie `linea`.
   - `GET  /api/agents` → agentes con disponibilidad + config del tenant.
   - `PUT  /api/agents` → encender/apagar/ajustar un agente (`AgenteConfigInput`); `alias` lo
     renombra (≤40 caracteres → si no, `400`). Sin `alias` en el body se conserva el actual; `""` lo borra.
@@ -54,6 +55,22 @@ El tenant sale de `resolveTenant()` (header `x-tenant-id` o `DEV_TENANT`).
 Con `WISP_DATABASE_URL` en el `.env`, la app lee la base de guaynet en **solo lectura** en vez de
 los datos de ejemplo (la home lo indica). Guía completa, mapeo y el SQL del usuario de solo
 lectura en [`apps/wisp`](../wisp/README.md). Sin esa variable sigue funcionando con el demo.
+
+## Dos líneas: Internet y Seguridad
+Internet y seguridad (el módulo de alarmas de guaynet) son **dos líneas de negocio, y cada una es su propio tenant**: su
+equipo de agentes, su bandeja, su configuración y sus avisos. Con `SEGURIDAD=on` aparece un **selector** arriba (la elección
+se guarda en una cookie). Así los agentes de cobro (cobros, morosidad…) existen solo en Internet, y Seguridad tiene los suyos:
+
+| | Internet | Seguridad |
+|---|---|---|
+| Datos | clientes, facturas, pagos, routers | alertas, suscripciones, eventos y equipos de alarmas |
+| Agentes disponibles | 15: cobros, morosidad, cobranza preventiva, flujo de caja, CRM, abandono, sistemas, **guardia**… | 7: **guardia**, agenda, sistemas, tareas, dirección, asistente |
+| Se cobra | sí (facturas) | **todavía no** (por eso no hay agentes de cobro) |
+
+Para activarla: corré `apps/wisp/sql/solo-lectura-seguridad.sql` además del de internet, y poné `SEGURIDAD=on` en el `.env`.
+Cada línea lleva su estado de avisos (un resumen por mañana y por línea) y puede tener su **propio chat de Telegram**
+(`TELEGRAM_CHAT_IDS_SEGURIDAD`, p.ej. el equipo de guardia). Los mensajes llevan la línea en el encabezado ("· 🛡️ Seguridad").
+El **nombre del cliente** de cada hallazgo aparece en la bandeja de la app, pero **no** en Telegram (salvo `AVISOS_NOMBRES=on`).
 
 ## Avisos por Telegram (Asistente personal)
 **Gael**, el Asistente personal, es el agente proactivo: te escribe por Telegram el **resumen de la
@@ -85,8 +102,8 @@ sistema. Es el interruptor de los avisos: **apagado, no escribe nada**.
 - Una sola revisión a la vez, y el motor **deduplica**: correr el equipo muchas veces no duplica la bandeja ni los avisos.
 
 **Ojo:** `GET /api/asistente` y `POST /api/asistente/prueba` no tienen login todavía (como el resto de la app): mantené la
-app en `127.0.0.1` o dentro de tu red. La prueba está limitada a una cada 30 s. El programador atiende a **un solo tenant**
-(`WISP_TENANT`/`DEV_TENANT`).
+app en `127.0.0.1` o dentro de tu red. La prueba está limitada a una cada 30 s. Un solo programador atiende **todas las líneas**,
+cada una con su servicio, su estado persistido y su canal.
 
 ## IA del chat
 El chat usa un modelo por una API compatible con OpenAI. **Por defecto, Ollama local: gratis,

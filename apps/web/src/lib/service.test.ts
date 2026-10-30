@@ -59,6 +59,29 @@ describe("Servicio del SaaS", () => {
     expect(bandeja.find((r) => r.agentId === "inventario")!.titular).toBeUndefined(); // un ítem no tiene titular
   });
 
+  it("incidentes y vencimientos (sin contactos) se nombran por metadata.titular del provider", async () => {
+    const ahora = new Date("2026-10-30T15:00:00Z");
+    const alarma = { id: "alerta:7", tenantId: "t1", creadoEn: ahora.toISOString(), firma: "alerta:7", titulo: "Pánico", nivel: "fatal", ocurrencias: 1, estado: "nuevo", primeraVez: "2026-10-30T14:40:00.000Z", metadata: { titular: "Casa García" } };
+    const contrato = { id: "contrato:2", tenantId: "t1", creadoEn: ahora.toISOString(), tipo: "vencimiento_contrato", titulo: "Contrato por vencer", inicia: "2026-10-21T02:59:59.000Z", metadata: { titular: "Local Pérez" } };
+    const sinNombre = { ...alarma, id: "alerta:9", firma: "alerta:9", metadata: {} };
+    const providers = {
+      incidents: { open: async () => ({ items: [alarma, sinNombre] }) },
+      agenda: { upcoming: async () => ({ items: [contrato] }) },
+    };
+    const app = crearApp();
+    const s = crearServicio({ store: app.store, providers, modeloNegocio: "suscripcion" });
+    const c: TenantCtx = { tenantId: "t1", now: () => ahora };
+    for (const agentId of ["guardia", "agenda"]) await s.setAgente(c, { agentId, encendido: true, autonomia: "manual" });
+    await s.correr(c);
+    const bandeja = await s.listarRecomendaciones(c);
+    const panico = bandeja.find((r) => r.refEntidad?.id === "alerta:7")!;
+    expect(panico.agentId).toBe("guardia");
+    expect(panico.titular).toEqual({ id: "alerta:7", nombre: "Casa García" });
+    expect(bandeja.find((r) => r.refEntidad?.id === "contrato:2")!.titular).toEqual({ id: "contrato:2", nombre: "Local Pérez" });
+    expect(bandeja.find((r) => r.refEntidad?.id === "alerta:9")!.titular).toBeUndefined();   // sin titular en el provider: no inventa
+    expect(panico.titulo).not.toContain("García");                                          // el título sigue siendo neutro
+  });
+
   it("si falla la lectura de contactos, la bandeja sale igual (sin nombres)", async () => {
     const app = crearApp();
     await app.store.agentConfig.set(ctx, { agentId: "cobros", encendido: true, autonomia: "manual" });
