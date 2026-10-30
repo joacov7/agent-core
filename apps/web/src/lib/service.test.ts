@@ -18,7 +18,7 @@ describe("Servicio del SaaS", () => {
   it("listarAgentes: marca disponibles y arranca todo apagado sin config", async () => {
     const s = servicioDemo();
     const vistas = await s.listarAgentes(ctx);
-    expect(vistas).toHaveLength(29);
+    expect(vistas).toHaveLength(30);
     const porId = new Map(vistas.map((v) => [v.manifest.id, v]));
     expect(porId.get("cobros")!.disponible).toBe(true);
     expect(porId.get("compliance")!.disponible).toBe(false); // retail no expone documents
