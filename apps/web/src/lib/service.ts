@@ -157,24 +157,39 @@ export function crearServicio(deps: ServicioDeps): Servicio {
     });
 
   /**
-   * Resuelve "a quién se refiere" cada recomendación, solo con capacidades: un hallazgo sobre
-   * un `contacto` se nombra directo y uno sobre un `cobro` por el contacto dueño de ese cobro.
-   * Sin esto la bandeja diría "Cobrar 15000 (vencido hace 111 días)" sin decir a quién. Es
-   * best-effort: si falla la lectura, la bandeja sale igual (sin nombres).
+   * Resuelve "a quién se refiere" cada recomendación, solo con capacidades: un hallazgo sobre un
+   * `contacto` se nombra directo; sobre un `cobro`, por el contacto dueño de ese cobro; y sobre un
+   * `incidente` o un `evento`, por la convención `metadata.titular` del provider (p.ej. la propiedad
+   * de una alarma). Sin esto la bandeja diría "Cobrar 15000 (vencido hace 111 días)" sin decir a quién.
+   * Es best-effort: si falla la lectura, la bandeja sale igual (sin nombres).
    */
   async function conTitular(ctx: TenantCtx, recos: Recomendacion[]): Promise<RecomendacionVista[]> {
-    const hayContacto = recos.some((r) => r.refEntidad?.tipo === "contacto");
-    const hayCobro = recos.some((r) => r.refEntidad?.tipo === "cobro");
-    if (!providers.contacts || (!hayContacto && !hayCobro)) return recos;
+    const hay = (tipo: string) => recos.some((r) => r.refEntidad?.tipo === tipo);
+    const hayContacto = hay("contacto"), hayCobro = hay("cobro"), hayIncidente = hay("incidente"), hayEvento = hay("evento");
+    if (!hayContacto && !hayCobro && !hayIncidente && !hayEvento) return recos;
     try {
-      const nombres = new Map((await providers.contacts.list(ctx)).items.map((c) => [c.id, c.nombre]));
+      const nombres = new Map<string, string>();
+      if (providers.contacts && (hayContacto || hayCobro)) {
+        for (const c of (await providers.contacts.list(ctx)).items) nombres.set(c.id, c.nombre);
+      }
       const cobroAContacto = new Map<string, string>();
       if (hayCobro && providers.receivables) {
         const [pendientes, vencidos] = await Promise.all([providers.receivables.pending(ctx), providers.receivables.overdue(ctx)]);
         for (const c of [...pendientes.items, ...vencidos.items]) cobroAContacto.set(c.id, c.contactoId);
       }
+      const delProvider = new Map<string, string>(); // id de incidente/evento → titular
+      const guardar = (items: { id: string; metadata?: Record<string, unknown> }[]) => {
+        for (const x of items) if (typeof x.metadata?.titular === "string") delProvider.set(x.id, x.metadata.titular);
+      };
+      if (hayIncidente && providers.incidents) guardar((await providers.incidents.open(ctx)).items);
+      if (hayEvento && providers.agenda) guardar((await providers.agenda.upcoming(ctx)).items);
+
       return recos.map((r) => {
         const ref = r.refEntidad;
+        if (ref?.tipo === "incidente" || ref?.tipo === "evento") {
+          const nombre = delProvider.get(ref.id);
+          return nombre !== undefined ? { ...r, titular: { id: ref.id, nombre } } : r;
+        }
         const contactoId = ref?.tipo === "contacto" ? ref.id : ref?.tipo === "cobro" ? cobroAContacto.get(ref.id) : undefined;
         const nombre = contactoId !== undefined ? nombres.get(contactoId) : undefined;
         return nombre !== undefined && contactoId !== undefined ? { ...r, titular: { id: contactoId, nombre } } : r;
@@ -184,6 +199,7 @@ export function crearServicio(deps: ServicioDeps): Servicio {
       return recos;
     }
   }
+
   const app: CapacidadesApp = modeloNegocio
     ? { capacidades: capacidadesDeProviders(providers), modeloNegocio }
     : { capacidades: capacidadesDeProviders(providers) };

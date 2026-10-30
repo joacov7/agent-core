@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveTenant } from "@/lib/tenant";
-import { servicio } from "@/lib/app";
+import { servicioDe } from "@/lib/app";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const ctx = resolveTenant(req);
   let res;
   try {
-    res = await servicio.correr(ctx);
+    res = await servicioDe(ctx.tenantId).correr(ctx);
   } catch (e) {
     // Un fallo de la fuente de datos (p.ej. la base del WISP caída) no filtra detalles al cliente.
     console.error("[run] falló la corrida:", e instanceof Error ? e.message : e);

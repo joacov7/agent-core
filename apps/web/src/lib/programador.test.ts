@@ -6,10 +6,10 @@ import type { Notificador, Recomendacion, TenantCtx } from "@agent-core/contract
 import { crearApp } from "@agent-core/app-ejemplo";
 import { crearServicio, type AgenteVista, type RecomendacionVista, type Servicio } from "./service";
 import {
-  CONFIG_POR_DEFECTO, ahoraLocal, enSilencio, estadoVacio, leerConfigProgramador, parseHora, tareasPendientes, tick,
-  type ConfigProgramador, type EstadoProgramador,
+  CONFIG_POR_DEFECTO, ahoraLocal, enSilencio, estadoVacio, leerConfigProgramador, parseHora, tareasPendientes, tick, tickLineas,
+  type ConfigProgramador, type EstadoProgramador, type LineaProgramada,
 } from "./programador";
-import { cargarEstado, guardarEstado } from "./programador-estado";
+import { cargarEstados, guardarEstados } from "./programador-estado";
 
 // Argentina es UTC-3 todo el año: 08:05 ART = 11:05 UTC.
 const art = (hora: string, dia = "2026-10-29") => new Date(`${dia}T${hora}:00-03:00`);
@@ -231,6 +231,59 @@ describe("tick", () => {
   });
 });
 
+describe("tickLineas: una línea por tenant, con su canal y su estado", () => {
+  function linea(tenantId: string, etiqueta: string, recos: RecomendacionVista[], opts: { sinCanal?: boolean; revienta?: boolean } = {}) {
+    const m = montar({ recos });
+    const enviados: string[] = [];
+    const servicio = opts.revienta
+      ? ({ async listarAgentes() { throw new Error("base de seguridad caída"); } } as unknown as Servicio)
+      : ({
+          async listarAgentes() { return [vista("asistente", "Gael", "Asistente personal", true), vista("cobros", "Lou", "Cobros", true)]; },
+          async correr() { return { ejecutados: [], recomendaciones: [] }; },
+          async listarRecomendaciones() { return recos; },
+        } as unknown as Servicio);
+    const l: LineaProgramada = { tenantId, etiqueta, servicio, estado: estadoVacio(), ...(opts.sinCanal ? {} : { notificador: { async enviar(_c, x) { enviados.push(x.texto); } } }) };
+    void m;
+    return { l, enviados };
+  }
+  const comun = (logs: string[]) => ({ cfg: cfg({ alertasCadaMin: 0 }), ahora: () => art("08:05"), log: (m: string) => logs.push(m), ctx: (tenantId: string): TenantCtx => ({ tenantId }), guardar: () => {} });
+
+  it("cada línea avisa lo suyo, con su etiqueta, y lleva su propio estado", async () => {
+    const internet = linea("guaynet", "🌐 Internet", [reco({ titulo: "Cobrar 15000 ARS (vencido hace 30 día(s))" })]);
+    const seguridad = linea("guaynet-seguridad", "🛡️ Seguridad", [reco({ agentId: "guardia", titulo: "Pánico: sin atender hace 12 min", refEntidad: { tipo: "incidente", id: "alerta:1" } })]);
+    const r = await tickLineas([internet.l, seguridad.l], comun([]));
+    expect(r).toEqual({ guaynet: { resumen: "enviado" }, "guaynet-seguridad": { resumen: "enviado" } });
+    expect(internet.enviados[0]).toContain("resumen del 29/10 · 🌐 Internet");
+    expect(internet.enviados[0]).toContain("Cobrar");
+    expect(internet.enviados[0]).not.toContain("Pánico");                   // lo de seguridad no se cuela en internet
+    expect(seguridad.enviados[0]).toContain("resumen del 29/10 · 🛡️ Seguridad");
+    expect(seguridad.enviados[0]).toContain("Pánico");
+    expect(seguridad.enviados[0]).not.toContain("Cobrar");
+    expect(internet.l.estado.ultimoResumen).toBe("2026-10-29");
+    expect(seguridad.l.estado.ultimoResumen).toBe("2026-10-29");
+  });
+
+  it("si una línea revienta, la otra igual recibe sus avisos (los fallos se aíslan)", async () => {
+    const logs: string[] = [];
+    const rota = linea("guaynet-seguridad", "🛡️ Seguridad", [], { revienta: true });
+    const sana = linea("guaynet", "🌐 Internet", [reco()]);
+    const r = await tickLineas([rota.l, sana.l], comun(logs));
+    expect(r["guaynet-seguridad"]).toEqual({ error: true });
+    expect(r.guaynet).toEqual({ resumen: "enviado" });
+    expect(sana.enviados).toHaveLength(1);
+    expect(logs.join("\n")).toContain("Seguridad");
+    expect(rota.l.estado.ultimoResumen).toBeUndefined();                    // la que falló no se da por avisada
+  });
+
+  it("una línea sin canal de Telegram no manda nada ni se toca", async () => {
+    const sin = linea("guaynet-seguridad", "🛡️ Seguridad", [reco()], { sinCanal: true });
+    const con = linea("guaynet", "🌐 Internet", [reco()]);
+    const r = await tickLineas([sin.l, con.l], comun([]));
+    expect(Object.keys(r)).toEqual(["guaynet"]);
+    expect(sin.l.estado).toEqual(estadoVacio());
+  });
+});
+
 describe("tick con el servicio real: el motor deduplica, la bandeja NO crece con las corridas", () => {
   it("5 revisiones seguidas dejan la misma cantidad de recomendaciones y avisan una sola vez", async () => {
     const app = crearApp();
@@ -253,16 +306,40 @@ describe("tick con el servicio real: el motor deduplica, la bandeja NO crece con
   });
 });
 
-describe("persistencia del estado", () => {
-  it("guarda y recarga; un archivo roto o inexistente arranca vacío", async () => {
+describe("persistencia del estado (uno por línea/tenant)", () => {
+  const e1: EstadoProgramador = { ...estadoVacio(), ultimoResumen: "2026-10-29", ultimaCorridaAlertas: 123, avisados: { "a|b": "2026-10-29" }, avisosDia: { fecha: "2026-10-29", n: 2 } };
+  const e2: EstadoProgramador = { ...estadoVacio(), ultimoResumen: "2026-10-30", avisados: { "x|y": "2026-10-30" } };
+
+  it("guarda y recarga cada línea por separado; un archivo roto o inexistente arranca vacío", async () => {
     const dir = await mkdtemp(join(tmpdir(), "prog-"));
     const ruta = join(dir, "sub", "estado.json");
-    const e: EstadoProgramador = { ...estadoVacio(), ultimoResumen: "2026-10-29", ultimaCorridaAlertas: 123, avisados: { "a|b": "2026-10-29" }, avisosDia: { fecha: "2026-10-29", n: 2 } };
-    await guardarEstado(ruta, e);
-    expect(await cargarEstado(ruta)).toEqual(e);
+    await guardarEstados(ruta, { guaynet: e1, "guaynet-seguridad": e2 });
+    const r = await cargarEstados(ruta, "guaynet");
+    expect(r.guaynet).toEqual(e1);
+    expect(r["guaynet-seguridad"]).toEqual({ ...estadoVacio(), ...e2 });
     expect(((await stat(ruta)).mode & 0o777).toString(8)).toBe("600");   // solo el dueño lo lee
     await writeFile(ruta, "{ esto no es json");
-    expect(await cargarEstado(ruta)).toEqual(estadoVacio());
-    expect(await cargarEstado(join(dir, "no-existe.json"))).toEqual(estadoVacio());
+    expect(await cargarEstados(ruta, "guaynet")).toEqual({});
+    expect(await cargarEstados(join(dir, "no-existe.json"), "guaynet")).toEqual({});
+  });
+
+  it("acepta el formato plano anterior (una sola línea) y lo asigna a la línea principal: actualizar no reenvía el resumen", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "prog-"));
+    const ruta = join(dir, "viejo.json");
+    await writeFile(ruta, JSON.stringify(e1));
+    const r = await cargarEstados(ruta, "guaynet");
+    expect(Object.keys(r)).toEqual(["guaynet"]);
+    expect(r.guaynet!.ultimoResumen).toBe("2026-10-29");
+    expect(r.guaynet!.avisados).toEqual({ "a|b": "2026-10-29" });
+  });
+
+  it("una línea corrupta no contamina a la otra", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "prog-"));
+    const ruta = join(dir, "mixto.json");
+    await writeFile(ruta, JSON.stringify({ version: 2, tenants: { a: e1, b: "basura", c: { avisados: 7 } } }));
+    const r = await cargarEstados(ruta, "a");
+    expect(r.a).toEqual(e1);
+    expect(r.b).toEqual(estadoVacio());
+    expect(r.c).toEqual(estadoVacio());
   });
 });

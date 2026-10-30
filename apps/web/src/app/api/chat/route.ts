@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveTenant } from "@/lib/tenant";
-import { servicio } from "@/lib/app";
+import { servicioDe } from "@/lib/app";
 import { esError } from "@/lib/errores";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   if (typeof body.agentId !== "string") return error("Falta agentId.", 400);
 
   try {
-    return NextResponse.json(await servicio.chatear(ctx, body.agentId, body.messages as never));
+    return NextResponse.json(await servicioDe(ctx.tenantId).chatear(ctx, body.agentId, body.messages as never));
   } catch (e) {
     if (esError(e, "ErrorDeValidacion")) return error(e.message, 400);
     if (esError(e, "ErrorIANoDisponible")) return error(e.message, 503, "sin_ia");

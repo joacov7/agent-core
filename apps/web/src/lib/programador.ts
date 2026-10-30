@@ -140,6 +140,8 @@ export interface DepsTick {
   ahora(): Date;
   ctx(): TenantCtx;
   log(mensaje: string): void;
+  /** Línea de negocio de este tick ("🛡️ Seguridad"): se agrega al encabezado de los mensajes. */
+  etiqueta?: string;
 }
 
 export interface ResultadoTick {
@@ -185,6 +187,7 @@ export async function tick(d: DepsTick): Promise<ResultadoTick> {
   const opts = {
     fecha, nombres, roles, titulares, incluirNombres: d.cfg.incluirNombres,
     ...(d.cfg.url ? { url: d.cfg.url } : {}),
+    ...(d.etiqueta ? { etiqueta: d.etiqueta } : {}),
   };
   const criticas = abiertas(recos).filter((r: Recomendacion) => r.severidad === "critica");
   const marcar = (rs: Recomendacion[]) => { for (const r of rs) d.estado.avisados[claveAviso(r)] = fecha; };
@@ -229,5 +232,42 @@ export async function tick(d: DepsTick): Promise<ResultadoTick> {
   for (const [k, f] of Object.entries(d.estado.avisados)) if (Date.parse(`${f}T00:00:00Z`) < corte) delete d.estado.avisados[k];
 
   await d.guardar();
+  return salida;
+}
+
+// ── Varias líneas de negocio ────────────────────────────────────────────────────────────────
+export interface LineaProgramada {
+  tenantId: string;
+  /** Va en el encabezado de los mensajes ("🛡️ Seguridad"). */
+  etiqueta: string;
+  servicio: Servicio;
+  /** Sin canal configurado para esta línea, no se le manda nada. */
+  notificador?: Notificador;
+  estado: EstadoProgramador;
+}
+
+export type ResultadoLinea = ResultadoTick | { error: true };
+
+/**
+ * Atiende cada línea con su propio servicio, notificador y estado. Los fallos se AÍSLAN: si una
+ * línea revienta (p.ej. su base no responde), la otra igual recibe sus avisos.
+ */
+export async function tickLineas(
+  lineas: LineaProgramada[],
+  comun: Pick<DepsTick, "cfg" | "ahora" | "log"> & { ctx(tenantId: string): TenantCtx; guardar(): void | Promise<void> },
+): Promise<Record<string, ResultadoLinea>> {
+  const salida: Record<string, ResultadoLinea> = {};
+  for (const l of lineas) {
+    if (!l.notificador) continue;
+    try {
+      salida[l.tenantId] = await tick({
+        servicio: l.servicio, notificador: l.notificador, cfg: comun.cfg, estado: l.estado, guardar: comun.guardar,
+        ahora: comun.ahora, ctx: () => comun.ctx(l.tenantId), log: comun.log, etiqueta: l.etiqueta,
+      });
+    } catch (e) {
+      comun.log(`[avisos] falló la línea "${l.etiqueta}": ${msj(e)}`);
+      salida[l.tenantId] = { error: true };
+    }
+  }
   return salida;
 }

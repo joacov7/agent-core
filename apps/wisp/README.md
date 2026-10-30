@@ -84,7 +84,8 @@ configuración de agentes y su bandeja (así cobros y morosidad quedan solo en i
   agente de Agenda marcaría "vencido" un contrato durante su propio día de vencimiento.
 - Las suscripciones canceladas o pendientes de instalación no generan avisos.
 
-**Permisos:** corré también [`sql/solo-lectura-seguridad.sql`](./sql/solo-lectura-seguridad.sql) (después de `solo-lectura.sql`).
+**Activarla:** corré también [`sql/solo-lectura-seguridad.sql`](./sql/solo-lectura-seguridad.sql) (después de `solo-lectura.sql`) y poné
+`SEGURIDAD=on` en `apps/web/.env`: aparece el selector Internet / Seguridad (ver el README de la app).
 
 **Ojo, a calibrar:** el agente de Agenda avisa a **7 días** (importante a 2), pensado para turnos y audiencias. Para renovar un
 contrato es poco aviso: se puede ampliar (es un ajuste del agente).
