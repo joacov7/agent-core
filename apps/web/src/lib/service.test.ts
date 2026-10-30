@@ -82,6 +82,24 @@ describe("Servicio del SaaS", () => {
     expect(panico.titulo).not.toContain("García");                                          // el título sigue siendo neutro
   });
 
+  it("la config base de la línea llega a los agentes: con aviso a 30 días un vencimiento en 20 días se avisa", async () => {
+    const ahora = new Date("2026-10-30T15:00:00Z");
+    const venceEn20 = { id: "contrato:1", tenantId: "t1", creadoEn: ahora.toISOString(), tipo: "vencimiento_contrato", titulo: "Contrato por vencer", inicia: "2026-11-19T02:59:59.000Z" };
+    const providers = { agenda: { upcoming: async () => ({ items: [venceEn20] }) } };
+    const c: TenantCtx = { tenantId: "t1", now: () => ahora };
+    const agendaRecos = async (config?: Record<string, unknown>) => {
+      const app = crearApp();
+      const s = crearServicio({ store: app.store, providers, modeloNegocio: "suscripcion", ...(config ? { config } : {}) });
+      await s.setAgente(c, { agentId: "agenda", encendido: true, autonomia: "manual" });
+      await s.correr(c);
+      return (await s.listarRecomendaciones(c)).filter((r) => r.agentId === "agenda");
+    };
+    expect(await agendaRecos()).toHaveLength(0);                                            // default: aviso a 7 días → todavía no
+    const con = await agendaRecos({ diasProximo: 15, diasAviso: 30 });
+    expect(con.map((r) => r.severidad)).toEqual(["oportunidad"]);                           // 20 días: aviso temprano
+    expect((await agendaRecos({ diasProximo: 25, diasAviso: 30 })).map((r) => r.severidad)).toEqual(["importante"]);
+  });
+
   it("si falla la lectura de contactos, la bandeja sale igual (sin nombres)", async () => {
     const app = crearApp();
     await app.store.agentConfig.set(ctx, { agentId: "cobros", encendido: true, autonomia: "manual" });

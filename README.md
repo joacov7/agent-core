@@ -117,7 +117,7 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**449 tests verdes** (435 sin DB + 14 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
+**457 tests verdes** (443 sin DB + 14 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
 (presupuesto/atribución) + adapter de persistencia Prisma + proveedor de IA OpenAI-compatible + capa de servicio del SaaS (incl. chat)
 + los 30 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico

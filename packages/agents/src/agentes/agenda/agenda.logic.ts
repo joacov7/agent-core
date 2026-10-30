@@ -12,6 +12,17 @@ export interface UmbralesAgenda {
 
 export const UMBRALES_AGENDA_DEFAULT: UmbralesAgenda = { diasProximo: 2, diasAviso: 7 };
 
+/**
+ * Umbrales desde la config del agente (`diasProximo`, `diasAviso`). Un valor inválido (no numérico,
+ * negativo, absurdo) se ignora y queda el default; `diasAviso` nunca es menor que `diasProximo`.
+ */
+export function umbralesDeConfig(config: Record<string, unknown> | undefined, base: UmbralesAgenda = UMBRALES_AGENDA_DEFAULT): UmbralesAgenda {
+  const dias = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 365 ? Math.floor(v) : undefined);
+  const diasProximo = dias(config?.diasProximo) ?? base.diasProximo;
+  const diasAviso = Math.max(dias(config?.diasAviso) ?? base.diasAviso, diasProximo);
+  return { diasProximo, diasAviso };
+}
+
 export interface AlertaAgenda {
   severidad: SeveridadAgenda;
   diasHasta: number;

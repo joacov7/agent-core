@@ -30,4 +30,23 @@ describe("agenteAgenda.run", () => {
     const out = await agenteAgenda.run(contexto({}));
     expect(out.recomendaciones).toHaveLength(0);
   });
+
+  it("los umbrales son configurables: con aviso a 30 días un contrato en 20 días SÍ se avisa (y con el default, no)", async () => {
+    const providers: ProviderRegistry = {
+      agenda: {
+        async upcoming() {
+          return { items: [
+            { id: "c1", tenantId: "t1", creadoEn: "2026-08-01T00:00:00.000Z", tipo: "vencimiento_contrato", titulo: "Contrato por vencer", inicia: "2026-09-14T00:00:00.000Z" }, // en 20 días
+            { id: "c2", tenantId: "t1", creadoEn: "2026-08-01T00:00:00.000Z", tipo: "vencimiento_contrato", titulo: "Otro", inicia: "2026-08-30T00:00:00.000Z" },             // en 5 días
+          ] };
+        },
+      },
+    };
+    const conDefault = await agenteAgenda.run(contexto(providers));
+    expect(conDefault.recomendaciones.map((r) => r.refEntidad?.id)).toEqual(["c2"]);          // solo el de 5 días (aviso a 7)
+
+    const configurado = await agenteAgenda.run({ ...contexto(providers), config: { diasProximo: 7, diasAviso: 30 } });
+    const porId = Object.fromEntries(configurado.recomendaciones.map((r) => [r.refEntidad!.id, r.severidad]));
+    expect(porId).toEqual({ c1: "oportunidad", c2: "importante" });                          // 20 d → aviso temprano; 5 d → importante
+  });
 });

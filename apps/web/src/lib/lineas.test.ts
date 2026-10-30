@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { leerCookie, leerLineas, resolverLinea } from "./lineas";
+import { configAgentesDe, leerCookie, leerLineas, resolverLinea } from "./lineas";
 
 describe("leerLineas", () => {
   it("sin base de datos: una sola línea, 'demo'", () => {
@@ -45,5 +45,19 @@ describe("leerCookie", () => {
     expect(leerCookie(null, "linea")).toBeUndefined();
     expect(leerCookie("", "linea")).toBeUndefined();
     expect(leerCookie("linea=%E0%A4%A", "linea")).toBeUndefined();              // %-secuencia inválida: no lanza
+  });
+});
+
+describe("configAgentesDe", () => {
+  const [internet, seguridad] = leerLineas({ WISP_DATABASE_URL: "x", SEGURIDAD: "on" }) as [import("./lineas").Linea, import("./lineas").Linea];
+  it("Seguridad avisa vencimientos a 30 días (importante a 15); Internet no toca nada", () => {
+    expect(configAgentesDe(seguridad, {})).toEqual({ diasProximo: 15, diasAviso: 30 });
+    expect(configAgentesDe(internet, { SEGURIDAD_AVISO_DIAS: "99" })).toEqual({});
+  });
+  it("se ajusta por entorno; lo inválido se ignora y el aviso nunca es menor que lo urgente", () => {
+    expect(configAgentesDe(seguridad, { SEGURIDAD_AVISO_DIAS: "45", SEGURIDAD_URGENTE_DIAS: "20" })).toEqual({ diasProximo: 20, diasAviso: 45 });
+    expect(configAgentesDe(seguridad, { SEGURIDAD_AVISO_DIAS: "mucho", SEGURIDAD_URGENTE_DIAS: "-3" })).toEqual({ diasProximo: 15, diasAviso: 30 });
+    expect(configAgentesDe(seguridad, { SEGURIDAD_AVISO_DIAS: "10", SEGURIDAD_URGENTE_DIAS: "25" })).toEqual({ diasProximo: 25, diasAviso: 25 });
+    expect(configAgentesDe(seguridad, { SEGURIDAD_AVISO_DIAS: "", SEGURIDAD_URGENTE_DIAS: "" })).toEqual({ diasProximo: 15, diasAviso: 30 });
   });
 });

@@ -87,8 +87,9 @@ configuración de agentes y su bandeja (así cobros y morosidad quedan solo en i
 **Activarla:** corré también [`sql/solo-lectura-seguridad.sql`](./sql/solo-lectura-seguridad.sql) (después de `solo-lectura.sql`) y poné
 `SEGURIDAD=on` en `apps/web/.env`: aparece el selector Internet / Seguridad (ver el README de la app).
 
-**Ojo, a calibrar:** el agente de Agenda avisa a **7 días** (importante a 2), pensado para turnos y audiencias. Para renovar un
-contrato es poco aviso: se puede ampliar (es un ajuste del agente).
+**Aviso de renovación:** el agente de Agenda avisa por defecto a **7 días** (importante a 2), pensado para turnos y audiencias.
+Para renovar un contrato es poco aviso, así que la línea Seguridad lo amplía a **30 días** (importante a 15):
+`SEGURIDAD_AVISO_DIAS` y `SEGURIDAD_URGENTE_DIAS` en `apps/web/.env`.
 
 ## Qué esperar (y qué ajustar con datos reales)
 - **Riesgo de abandono** compara los días desde el último pago con tu frecuencia habitual
