@@ -123,6 +123,8 @@ selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
 + los 30 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico
 y marketplace).
 
+**Instalación en tu servidor (Ubuntu, paso a paso, con guaynet, Telegram e IA local): [`docs/INSTALACION.md`](docs/INSTALACION.md).**
+
 ## Principios
 
 - **Multi-tenancy obligatorio:** todo pasa por `TenantCtx`. Sin tenant, el Core no
