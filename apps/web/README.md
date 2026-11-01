@@ -8,6 +8,9 @@ agentes y un **panel** que corre la capa de servicio en el servidor.
 > `next build` es su propio paso. La **capa de servicio** (`src/lib/service.ts`) sí se
 > testea en el vitest de la raíz.
 
+> **Instalar en un servidor Ubuntu** (servicio permanente, base real de guaynet, Telegram, IA local, seguridad de acceso,
+> backups, resolución de problemas): ver el [instructivo completo](../../docs/INSTALACION.md).
+
 ## Correr en DEV (sin claves, sin DB)
 Usa el adapter de referencia in-memory (retail), así ves todo funcionando ya:
 
