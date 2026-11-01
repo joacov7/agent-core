@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { chmod, mkdir, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { CoreStoreEnMemoria } from "@agent-core/app-ejemplo";
@@ -31,11 +31,15 @@ export interface OpcionesPersistencia {
   retencionDias?: number;
   ahora?: () => Date;
   log?: (msg: string) => void;
+  /** Vuelca lo pendiente cuando el proceso sale (p.ej. `systemctl restart`). Default `true`; los tests lo apagan. */
+  alSalir?: boolean;
 }
 
 export interface Persistencia {
   /** Vuelca ya (y espera a que termine). Úsalo al apagar y en los tests. */
   guardar(): Promise<void>;
+  /** Vuelca ya, de forma síncrona: es lo único permitido dentro del evento `exit` del proceso. */
+  guardarSync(): void;
   /** Lo que se cargó del archivo al arrancar (para el log de inicio). */
   readonly cargadas: { recomendaciones: number; agentes: number; descartadas: number };
 }
@@ -67,7 +71,7 @@ function leer(ruta: string, log: (m: string) => void): Snapshot | undefined {
 }
 
 export function persistirStore(store: CoreStoreEnMemoria, opts: OpcionesPersistencia): Persistencia {
-  const { ruta, retardoMs = 500, retencionDias = 90, ahora = () => new Date(), log = (m) => console.warn(m) } = opts;
+  const { ruta, retardoMs = 500, retencionDias = 90, ahora = () => new Date(), log = (m) => console.warn(m), alSalir = true } = opts;
 
   // ── Carga (síncrona: el store tiene que estar completo antes del primer request) ──────────────
   const j = leer(ruta, log);
@@ -93,20 +97,44 @@ export function persistirStore(store: CoreStoreEnMemoria, opts: OpcionesPersiste
   let enCurso: Promise<void> = Promise.resolve();
   let sucio = false;
 
+  let volcando = false;
+  const snapshot = (): string => JSON.stringify({
+    version: VERSION,
+    recos: store._recos, results: store._results, impacts: store._impacts,
+    mem: store._mem, gasto: store._gasto, agentCfgs: store._agentCfgs,
+  } satisfies Snapshot);
+
   const volcar = async () => {
     if (!sucio) return;
     sucio = false;
-    const snap: Snapshot = {
-      version: VERSION,
-      recos: store._recos, results: store._results, impacts: store._impacts,
-      mem: store._mem, gasto: store._gasto, agentCfgs: store._agentCfgs,
-    };
-    const dir = dirname(ruta);
-    await mkdir(dir, { recursive: true, mode: 0o700 });
-    const tmp = `${ruta}.${process.pid}.tmp`;
-    await writeFile(tmp, JSON.stringify(snap), { encoding: "utf8", mode: 0o600 });
-    await chmod(tmp, 0o600); // el mode de writeFile no aplica si el tmp ya existía
-    await rename(tmp, ruta);
+    volcando = true;
+    try {
+      const datos = snapshot();
+      await mkdir(dirname(ruta), { recursive: true, mode: 0o700 });
+      const tmp = `${ruta}.${process.pid}.tmp`;
+      await writeFile(tmp, datos, { encoding: "utf8", mode: 0o600 });
+      await chmod(tmp, 0o600); // el mode de writeFile no aplica si el tmp ya existía
+      await rename(tmp, ruta);
+    } finally {
+      volcando = false;
+    }
+  };
+
+  /** Misma escritura atómica, pero síncrona: dentro de `exit` no se puede esperar nada. */
+  const guardarSync = () => {
+    if (!sucio && !volcando) return; // `volcando`: había una escritura a medias que no sabemos si terminó
+    if (timer) { clearTimeout(timer); timer = undefined; }
+    try {
+      const datos = snapshot();
+      mkdirSync(dirname(ruta), { recursive: true, mode: 0o700 });
+      const tmp = `${ruta}.${process.pid}.sync.tmp`;
+      writeFileSync(tmp, datos, { encoding: "utf8", mode: 0o600 });
+      chmodSync(tmp, 0o600);
+      renameSync(tmp, ruta);
+      sucio = false;
+    } catch (e) {
+      log(`[store] no pude guardar ${ruta} al salir: ${e instanceof Error ? e.message : String(e)}`);
+    }
   };
 
   const encolar = () => {
@@ -121,7 +149,7 @@ export function persistirStore(store: CoreStoreEnMemoria, opts: OpcionesPersiste
     sucio = true;
     if (timer) return;
     timer = setTimeout(() => { timer = undefined; void encolar(); }, retardoMs);
-    timer.unref?.(); // no impide que el proceso termine. Un corte duro pierde, como mucho, los últimos `retardoMs` de cambios
+    timer.unref?.(); // no impide que el proceso termine; si sale, `guardarSync` (evento `exit`) vuelca lo pendiente. Solo un SIGKILL o un corte de luz pierden los últimos `retardoMs`
   };
 
   const guardar = async () => {
@@ -146,11 +174,15 @@ export function persistirStore(store: CoreStoreEnMemoria, opts: OpcionesPersiste
   envolver(store.gastoIA, "registrar");
   envolver(store.agentConfig, "set");
 
+  // Al salir el proceso (SIGTERM de systemd → Next llama a process.exit) se vuelca lo pendiente.
+  if (alSalir) process.on("exit", guardarSync);
+
   // Una poda se registra en disco para no releer lo descartado.
   if (descartadas > 0) programar();
 
   return {
     guardar,
+    guardarSync,
     cargadas: { recomendaciones: store._recos.length, agentes: store._agentCfgs.length, descartadas },
   };
 }

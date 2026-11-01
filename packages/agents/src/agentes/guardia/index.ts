@@ -2,7 +2,8 @@ import type {
   Agent, AgentContext, AgentManifest, AgentRunOutput, RecomendacionNueva,
 } from "@agent-core/contracts";
 import { calcularPrioridad, confianzaPorOrigen } from "@agent-core/core";
-import { evaluarGuardia } from "./guardia.logic.js";
+import { schemaDeCampos } from "../../ajustes.js";
+import { AJUSTES_GUARDIA, evaluarGuardia, umbralesGuardiaDeConfig } from "./guardia.logic.js";
 
 export * from "./guardia.logic.js";
 
@@ -27,13 +28,15 @@ export const manifestGuardia: AgentManifest = {
   toolsDeEscritura: [],
   riesgo: "bajo",
   autonomiaMaxima: "manual",
+  configSchema: schemaDeCampos(AJUSTES_GUARDIA),
 };
 
 export const agenteGuardia: Agent = {
   manifest: manifestGuardia,
-  async run({ ctx, providers }: AgentContext): Promise<AgentRunOutput> {
+  async run({ ctx, providers, config }: AgentContext): Promise<AgentRunOutput> {
     if (!providers.incidents) return { recomendaciones: [], resumen: "Falta la capacidad incidents." };
 
+    const umbrales = umbralesGuardiaDeConfig(config);
     const ahora = ctx.now?.() ?? new Date();
     const confianza = confianzaPorOrigen("deterministico");
     const { items } = await providers.incidents.open(ctx);
@@ -43,6 +46,7 @@ export const agenteGuardia: Agent = {
       const a = evaluarGuardia(
         { id: inc.id, firma: inc.firma, titulo: inc.titulo, nivel: inc.nivel ?? null, estado: inc.estado ?? null, primeraVez: inc.primeraVez ?? null },
         ahora,
+        umbrales,
       );
       if (!a) continue;
       recomendaciones.push({

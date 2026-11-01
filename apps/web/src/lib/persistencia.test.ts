@@ -20,7 +20,7 @@ function reco(tenantId: string, id: string, estado: Recomendacion["estado"], fec
 let dir: string;
 let ruta: string;
 const log: string[] = [];
-const opciones = () => ({ ruta, retardoMs: 5, ahora: AHORA, log: (m: string) => log.push(m) });
+const opciones = () => ({ ruta, retardoMs: 5, ahora: AHORA, log: (m: string) => log.push(m), alSalir: false });
 
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "agentcore-store-")); ruta = join(dir, "sub", "store.json"); log.length = 0; });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
@@ -120,6 +120,47 @@ describe("persistirStore", () => {
     await expect(s.recommendations.save(ctxA, reco("guaynet", "r1", "proposed", "2026-10-29T00:00:00Z"))).resolves.toBeDefined();
     await p.guardar();
     expect(log.join("\n")).toMatch(/no pude guardar/);
+  });
+});
+
+describe("volcado al salir (guardarSync)", () => {
+  it("lo pendiente dentro de la ventana del debounce se escribe igual, de forma síncrona", async () => {
+    const s1 = crearCoreStore();
+    const p1 = persistirStore(s1, { ...opciones(), retardoMs: 60_000 }); // el temporizador jamás llegaría a correr
+    await s1.agentConfig.set(ctxA, { agentId: "cobros", encendido: true, autonomia: "assisted", config: { diasCritico: 45 } });
+    expect(existsSync(ruta)).toBe(false);
+    p1.guardarSync();                                   // lo que hace el evento `exit` del proceso
+    expect(statSync(ruta).mode & 0o777).toBe(0o600);
+
+    const s2 = crearCoreStore();
+    persistirStore(s2, opciones());
+    expect((await s2.agentConfig.get(ctxA, "cobros"))?.config).toEqual({ diasCritico: 45 });
+  });
+
+  it("sin cambios pendientes no escribe nada", () => {
+    const s = crearCoreStore();
+    persistirStore(s, opciones()).guardarSync();
+    expect(existsSync(ruta)).toBe(false);
+  });
+
+  it("después de volcar queda limpio: un segundo guardarSync no reescribe", async () => {
+    const s = crearCoreStore();
+    const p = persistirStore(s, { ...opciones(), retardoMs: 60_000 });
+    await s.agentConfig.set(ctxA, { agentId: "cobros", encendido: true, autonomia: "manual" });
+    p.guardarSync();
+    const mtime = statSync(ruta).mtimeMs;
+    await new Promise((r) => setTimeout(r, 20));
+    p.guardarSync();
+    expect(statSync(ruta).mtimeMs).toBe(mtime);
+  });
+
+  it("si no puede escribir al salir, avisa por el log y no lanza (no puede tumbar el cierre)", async () => {
+    writeFileSync(join(dir, "archivo"), "x");
+    const s = crearCoreStore();
+    const p = persistirStore(s, { ...opciones(), ruta: join(dir, "archivo", "store.json"), retardoMs: 60_000 });
+    await s.agentConfig.set(ctxA, { agentId: "cobros", encendido: true, autonomia: "manual" });
+    expect(() => p.guardarSync()).not.toThrow();
+    expect(log.join("\n")).toMatch(/al salir/);
   });
 });
 

@@ -12,7 +12,7 @@ interface Reco {
   titular?: { id: string; nombre: string };
 }
 
-interface Quien { nombre: string; rol: string; categoria: string }
+interface Quien { nombre: string; rol: string; categoria: string; fotoUrl?: string }
 
 const SEV: Record<Severidad, { label: string; color: string }> = {
   critica: { label: "Crítica", color: C.crit },
@@ -35,8 +35,8 @@ export default function BandejaPage() {
       if (!r.ok) throw new Error(`GET /api/recommendations → ${r.status}`);
       setRecos(await r.json());
       if (ag.ok) {
-        const lista = (await ag.json()) as { manifest: { id: string; categoria: string }; persona: { nombre: string; rol: string } }[];
-        setEquipo(Object.fromEntries(lista.map((a) => [a.manifest.id, { nombre: a.persona.nombre, rol: a.persona.rol, categoria: a.manifest.categoria }])));
+        const lista = (await ag.json()) as { manifest: { id: string; categoria: string }; persona: { nombre: string; rol: string; fotoUrl?: string } }[];
+        setEquipo(Object.fromEntries(lista.map((a) => [a.manifest.id, { nombre: a.persona.nombre, rol: a.persona.rol, categoria: a.manifest.categoria, ...(a.persona.fotoUrl ? { fotoUrl: a.persona.fotoUrl } : {}) }])));
       }
       setError(null);
     } catch (e) {
@@ -99,7 +99,7 @@ export default function BandejaPage() {
             }}>
               {equipo[r.agentId] && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                  <Avatar nombre={equipo[r.agentId]!.nombre} categoria={equipo[r.agentId]!.categoria} size={26} />
+                  <Avatar nombre={equipo[r.agentId]!.nombre} categoria={equipo[r.agentId]!.categoria} size={26} {...(equipo[r.agentId]!.fotoUrl ? { fotoUrl: equipo[r.agentId]!.fotoUrl! } : {})} />
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{equipo[r.agentId]!.nombre}</span>
                   <span style={{ fontSize: 12, color: C.faint }}>· {equipo[r.agentId]!.rol}</span>
                 </div>

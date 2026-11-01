@@ -2,7 +2,8 @@ import type {
   Agent, AgentContext, AgentManifest, AgentRunOutput, RecomendacionNueva,
 } from "@agent-core/contracts";
 import { calcularPrioridad, confianzaPorOrigen } from "@agent-core/core";
-import { clasificarPreventivo, diasHastaVencimiento } from "./cobranza-preventiva.logic.js";
+import { schemaDeCampos } from "../../ajustes.js";
+import { AJUSTES_PREVENTIVO, clasificarPreventivo, diasHastaVencimiento, umbralesPreventivoDeConfig } from "./cobranza-preventiva.logic.js";
 
 export * from "./cobranza-preventiva.logic.js";
 
@@ -26,14 +27,16 @@ export const manifestCobranzaPreventiva: AgentManifest = {
   toolsDeEscritura: [],
   riesgo: "bajo",
   autonomiaMaxima: "assisted",
+  configSchema: schemaDeCampos(AJUSTES_PREVENTIVO),
 };
 
 export const agenteCobranzaPreventiva: Agent = {
   manifest: manifestCobranzaPreventiva,
-  async run({ ctx, providers }: AgentContext): Promise<AgentRunOutput> {
+  async run({ ctx, providers, config }: AgentContext): Promise<AgentRunOutput> {
     const receivables = providers.receivables;
     if (!receivables) return { recomendaciones: [] };
 
+    const umbrales = umbralesPreventivoDeConfig(config);
     const hoy = ctx.now?.() ?? new Date();
     const confianza = confianzaPorOrigen("deterministico");
     const { items } = await receivables.pending(ctx);
@@ -42,7 +45,7 @@ export const agenteCobranzaPreventiva: Agent = {
     for (const cobro of items) {
       const dias = diasHastaVencimiento(cobro.venceEn, hoy);
       if (dias == null) continue; // sin vencimiento → no hay nada preventivo que avisar
-      const alerta = clasificarPreventivo({ estado: cobro.estado, monto: cobro.monto, diasHastaVencimiento: dias });
+      const alerta = clasificarPreventivo({ estado: cobro.estado, monto: cobro.monto, diasHastaVencimiento: dias }, umbrales);
       if (!alerta) continue;
 
       recomendaciones.push({

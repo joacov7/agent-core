@@ -2,7 +2,8 @@ import type {
   Agent, AgentContext, AgentManifest, AgentRunOutput, RecomendacionNueva,
 } from "@agent-core/contracts";
 import { calcularPrioridad, confianzaPorOrigen } from "@agent-core/core";
-import { clasificarCobro, diasVencido } from "./cobros.logic.js";
+import { schemaDeCampos } from "../../ajustes.js";
+import { AJUSTES_COBROS, clasificarCobro, diasVencido, umbralesCobrosDeConfig } from "./cobros.logic.js";
 
 export * from "./cobros.logic.js";
 
@@ -25,14 +26,16 @@ export const manifestCobros: AgentManifest = {
   toolsDeEscritura: [],
   riesgo: "medio",
   autonomiaMaxima: "assisted",
+  configSchema: schemaDeCampos(AJUSTES_COBROS),
 };
 
 export const agenteCobros: Agent = {
   manifest: manifestCobros,
-  async run({ ctx, providers }: AgentContext): Promise<AgentRunOutput> {
+  async run({ ctx, providers, config }: AgentContext): Promise<AgentRunOutput> {
     const receivables = providers.receivables;
     if (!receivables) return { recomendaciones: [] };
 
+    const umbrales = umbralesCobrosDeConfig(config);
     const hoy = ctx.now?.() ?? new Date();
     const confianza = confianzaPorOrigen("deterministico");
     const { items } = await receivables.overdue(ctx);
@@ -40,7 +43,7 @@ export const agenteCobros: Agent = {
 
     for (const cobro of items) {
       const dias = diasVencido(cobro.venceEn, hoy);
-      const alerta = clasificarCobro({ estado: cobro.estado, monto: cobro.monto, diasVencido: dias });
+      const alerta = clasificarCobro({ estado: cobro.estado, monto: cobro.monto, diasVencido: dias }, umbrales);
       if (!alerta) continue;
 
       recomendaciones.push({

@@ -4,6 +4,8 @@
 // usuario. Determinístico y genérico: sirve para cualquier fuente de incidentes (alarmas, caídas
 // de red, errores de software). No resuelve nada: solo avisa que se pasó el tiempo.
 
+import { leerCampos, type CamposAjuste } from "../../ajustes.js";
+
 export type SeveridadGuardia = "critica" | "importante";
 export type TipoGuardia = "sin_atender" | "atencion_lenta";
 
@@ -21,6 +23,29 @@ export const UMBRALES_GUARDIA_DEFAULT: UmbralesGuardia = {
   atencionLentaMin: { fatal: 30, error: 120, warning: 1440 },
   defecto: { sinAtenderMin: 60, atencionLentaMin: 240 },
 };
+
+type ClaveGuardia =
+  | "sinAtenderFatalMin" | "sinAtenderErrorMin" | "sinAtenderWarningMin"
+  | "atencionLentaFatalMin" | "atencionLentaErrorMin" | "atencionLentaWarningMin";
+
+export const AJUSTES_GUARDIA: CamposAjuste<ClaveGuardia> = {
+  sinAtenderFatalMin: { titulo: "Sin atender: pánico / intrusión", descripcion: "Minutos que una alerta de máxima gravedad puede estar sin que nadie la tome antes de ser crítica.", default: 5, min: 1, max: 1440, unidad: "min" },
+  sinAtenderErrorMin: { titulo: "Sin atender: error", descripcion: "Minutos tolerados para una alerta de gravedad media.", default: 30, min: 1, max: 1440, unidad: "min" },
+  sinAtenderWarningMin: { titulo: "Sin atender: aviso", descripcion: "Minutos tolerados para una alerta leve.", default: 240, min: 1, max: 10080, unidad: "min" },
+  atencionLentaFatalMin: { titulo: "En atención: pánico / intrusión", descripcion: "Minutos que una alerta grave puede estar \"en atención\" sin resolverse.", default: 30, min: 1, max: 10080, unidad: "min" },
+  atencionLentaErrorMin: { titulo: "En atención: error", descripcion: "Minutos tolerados \"en atención\" para gravedad media.", default: 120, min: 1, max: 10080, unidad: "min" },
+  atencionLentaWarningMin: { titulo: "En atención: aviso", descripcion: "Minutos tolerados \"en atención\" para una alerta leve.", default: 1440, min: 1, max: 43200, unidad: "min" },
+};
+
+/** Las alertas de nivel desconocido siguen usando los umbrales por defecto de la Guardia. */
+export function umbralesGuardiaDeConfig(config?: Record<string, unknown>): UmbralesGuardia {
+  const v = leerCampos(AJUSTES_GUARDIA, config);
+  return {
+    sinAtenderMin: { fatal: v.sinAtenderFatalMin, error: v.sinAtenderErrorMin, warning: v.sinAtenderWarningMin },
+    atencionLentaMin: { fatal: v.atencionLentaFatalMin, error: v.atencionLentaErrorMin, warning: v.atencionLentaWarningMin },
+    defecto: UMBRALES_GUARDIA_DEFAULT.defecto,
+  };
+}
 
 export interface IncidenteGuardia {
   id: string;

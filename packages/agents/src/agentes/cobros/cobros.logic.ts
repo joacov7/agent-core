@@ -2,6 +2,8 @@
 // Decide qué cobrar y con qué urgencia a partir de datos REALES del cobro (estado,
 // monto, días vencido). Determinístico: no infiere probabilidad de pago.
 
+import { leerCampos, type CamposAjuste } from "../../ajustes.js";
+
 export type SeveridadCobro = "critica" | "importante" | "oportunidad";
 
 export interface UmbralesCobros {
@@ -12,6 +14,15 @@ export interface UmbralesCobros {
 }
 
 export const UMBRALES_COBROS_DEFAULT: UmbralesCobros = { diasCritico: 30, montoRelevante: 0 };
+
+export const AJUSTES_COBROS: CamposAjuste<keyof UmbralesCobros> = {
+  diasCritico: { titulo: "Cobro crítico", descripcion: "Días de atraso desde los que un cobro vencido es crítico (antes es importante).", default: 30, min: 1, max: 365, unidad: "días" },
+  montoRelevante: { titulo: "Monto mínimo", descripcion: "Los cobros por este monto o menos no generan alerta (evita ruido de centavos).", default: 0, min: 0, max: 1_000_000_000, entero: false },
+};
+
+export function umbralesCobrosDeConfig(config?: Record<string, unknown>): UmbralesCobros {
+  return leerCampos(AJUSTES_COBROS, config);
+}
 
 export interface CobroInput {
   estado: string;

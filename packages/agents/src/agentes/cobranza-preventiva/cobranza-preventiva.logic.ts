@@ -3,6 +3,8 @@
 // mora. Determinístico. Complementa a Cobros (ya vencido) y Morosidad (mora
 // avanzada): esto es solo lo que está POR vencer dentro de una ventana.
 
+import { leerCampos, type CamposAjuste } from "../../ajustes.js";
+
 export type SeveridadPreventiva = "importante" | "oportunidad";
 
 export interface UmbralesPreventivo {
@@ -17,6 +19,17 @@ export interface UmbralesPreventivo {
 export const UMBRALES_PREVENTIVO_DEFAULT: UmbralesPreventivo = {
   diasProximo: 3, diasAviso: 7, montoRelevante: 0,
 };
+
+export const AJUSTES_PREVENTIVO: CamposAjuste<keyof UmbralesPreventivo> = {
+  diasProximo: { titulo: "Vence pronto", descripcion: "Días antes del vencimiento desde los que el recordatorio es \"importante\".", default: 3, min: 0, max: 90, unidad: "días" },
+  diasAviso: { titulo: "Aviso temprano", descripcion: "Días antes del vencimiento desde los que se empieza a recordar. Si es menor que \"vence pronto\", se usa ese.", default: 7, min: 0, max: 180, unidad: "días" },
+  montoRelevante: { titulo: "Monto mínimo", descripcion: "Los cobros por este monto o menos no generan recordatorio.", default: 0, min: 0, max: 1_000_000_000, entero: false },
+};
+
+export function umbralesPreventivoDeConfig(config?: Record<string, unknown>): UmbralesPreventivo {
+  const v = leerCampos(AJUSTES_PREVENTIVO, config);
+  return { ...v, diasAviso: Math.max(v.diasAviso, v.diasProximo) };
+}
 
 export interface CobroPreventivoInput {
   estado: string;

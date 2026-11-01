@@ -5,6 +5,7 @@ import { LINEAS, configAgentesDe } from "@/lib/lineas";
 import { crearProvidersSeguridad, crearProvidersWisp, MODELO_NEGOCIO_SEGURIDAD, MODELO_NEGOCIO_WISP } from "@agent-core/app-wisp";
 import { poolWisp } from "@/lib/wisp";
 import { persistirStore, rutaDeStore } from "@/lib/persistencia";
+import { almacenDesdeEnv } from "@/lib/fotos";
 
 // Wiring de la app. DEV: usa el adapter de referencia in-memory (retail) para que el
 // SaaS corra sin DB ni claves y veas la API funcionando.
@@ -36,7 +37,8 @@ function crearInstancia(): Instancia {
   }
   const ia = crearIA(process.env, dev.store);
   const wispUrl = process.env.WISP_DATABASE_URL;
-  const comun = { store: dev.store, ...(ia ? { ai: ia } : {}) }; // un solo store en memoria: sus filas ya van separadas por tenant
+  const fotos = almacenDesdeEnv(process.env);
+  const comun = { store: dev.store, fotosDe: (ctx: { tenantId: string }) => fotos.urls(ctx.tenantId), ...(ia ? { ai: ia } : {}) }; // un solo store en memoria: sus filas ya van separadas por tenant
 
   // Fuente de datos: con WISP_DATABASE_URL, los datos REALES del WISP (guaynet, solo lectura); sin ella,
   // el adapter de ejemplo (retail demo). Un SERVICIO por línea/tenant: cada una con su adapter, sus

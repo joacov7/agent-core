@@ -2,7 +2,8 @@ import type {
   Agent, AgentContext, AgentManifest, AgentRunOutput, RecomendacionNueva,
 } from "@agent-core/contracts";
 import { calcularPrioridad, confianzaPorOrigen } from "@agent-core/core";
-import { clasificarMora } from "./morosidad.logic.js";
+import { schemaDeCampos } from "../../ajustes.js";
+import { AJUSTES_MORA, clasificarMora, umbralesMoraDeConfig } from "./morosidad.logic.js";
 import { diasVencido } from "../cobros/cobros.logic.js";
 
 export * from "./morosidad.logic.js";
@@ -27,14 +28,16 @@ export const manifestMorosidad: AgentManifest = {
   toolsDeEscritura: [],
   riesgo: "medio",
   autonomiaMaxima: "manual",
+  configSchema: schemaDeCampos(AJUSTES_MORA),
 };
 
 export const agenteMorosidad: Agent = {
   manifest: manifestMorosidad,
-  async run({ ctx, providers }: AgentContext): Promise<AgentRunOutput> {
+  async run({ ctx, providers, config }: AgentContext): Promise<AgentRunOutput> {
     const receivables = providers.receivables;
     if (!receivables) return { recomendaciones: [] };
 
+    const umbrales = umbralesMoraDeConfig(config);
     const hoy = ctx.now?.() ?? new Date();
     const confianza = confianzaPorOrigen("deterministico");
     const { items } = await receivables.overdue(ctx);
@@ -43,7 +46,7 @@ export const agenteMorosidad: Agent = {
     for (const cobro of items) {
       if (cobro.estado === "cobrado" || cobro.estado === "incobrable") continue;
       const dias = diasVencido(cobro.venceEn, hoy);
-      const alerta = clasificarMora(dias);
+      const alerta = clasificarMora(dias, umbrales);
       if (!alerta) continue;
 
       recomendaciones.push({

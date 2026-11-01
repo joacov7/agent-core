@@ -23,6 +23,7 @@ acceso, backups, actualización y resolución de problemas.
 7. [Fase 4 — Línea Seguridad (alarmas)](#7-fase-4--línea-seguridad-alarmas)
 8. [Fase 5 — IA local gratis (Ollama)](#8-fase-5--ia-local-gratis-ollama)
 9. [Fase 6 — Avisos por Telegram (Gael)](#9-fase-6--avisos-por-telegram-gael)
+   - [Personalizar los agentes: nombre, foto y ajustes](#personalizar-los-agentes-nombre-foto-y-ajustes)
 10. [Seguridad de acceso (la app no tiene login)](#10-seguridad-de-acceso-la-app-no-tiene-login)
 11. [Referencia de variables de entorno](#11-referencia-de-variables-de-entorno)
 12. [Archivos que se generan, backups y restauración](#12-archivos-que-se-generan-backups-y-restauración)
@@ -213,7 +214,7 @@ Wants=docker.service
 [Service]
 Type=simple
 User=joaquin
-# IMPORTANTE: el directorio de trabajo define dónde se guarda .agentcore/ (store.json y estado-avisos.json)
+# IMPORTANTE: el directorio de trabajo define dónde se guarda .agentcore/ (store.json, estado-avisos.json y fotos/)
 WorkingDirectory=/home/joaquin/agent-core/apps/web
 Environment=NODE_ENV=production
 # Solo si Node viene de nvm: ajustá a tu versión
@@ -514,6 +515,78 @@ una advertencia `[avisos] …` en el log.
 
 ---
 
+## Personalizar los agentes: nombre, foto y ajustes
+
+Todo se hace desde **`/consola`** (`http://10.0.0.39:3100/consola`) y se guarda **por línea**: Internet y Seguridad tienen su propio
+nombre, foto y ajustes para cada agente. Sobrevive a los reinicios.
+
+### Nombre (✎)
+Tocá el lápiz junto al nombre y escribí el que quieras (hasta 40 caracteres). Vacío vuelve al nombre por defecto.
+
+### Foto (📷 y ✕)
+- 📷 abre el selector de archivos; ✕ (aparece cuando hay foto) la quita y vuelve a la inicial de colores.
+- **PNG, JPG o WebP, hasta 512 KB.** Conviene una imagen **cuadrada**: se muestra en un círculo recortada al centro. Si pesa más, achicala antes
+  (cualquier editor o `convert foto.jpg -resize 256x256 chica.jpg`).
+- No se aceptan SVG ni GIF (un SVG puede llevar scripts). El tipo se verifica por el contenido del archivo, no por el nombre.
+- Se guarda en `apps/web/.agentcore/fotos/<línea>/<agente>.<png|jpg|webp>` (cambiable con `FOTOS_DIR`). **Incluila en los backups.**
+- Se ve en la home, en la bandeja, en el chat de cada agente y en la consola. Si el archivo se pierde o no carga, se muestra el avatar de siempre.
+
+### Ajustes (⚙)
+Los agentes de abajo tienen un botón **⚙ Ajustes** en su tarjeta, con los umbrales que podés cambiar. Los demás agentes no tienen ajustes todavía.
+
+| Agente | Ajuste | Clave | De fábrica | Rango |
+|---|---|---|---|---|
+| Lou (Cobros) | Cobro crítico | `diasCritico` | 30 días | 1–365 |
+| Lou (Cobros) | Monto mínimo | `montoRelevante` | 0 | 0–1.000.000.000 |
+| Ale (Agenda) | Vence pronto | `diasProximo` | 2 días | 0–365 |
+| Ale (Agenda) | Aviso temprano | `diasAviso` | 7 días | 0–365 |
+| Maxi (Morosidad) | Mora media | `media` | 30 días | 1–365 |
+| Maxi (Morosidad) | Mora avanzada | `avanzada` | 60 días | 1–730 |
+| Maxi (Morosidad) | Riesgo de incobrable | `incobrable` | 90 días | 1–1095 |
+| Juli (Cobranza preventiva) | Vence pronto | `diasProximo` | 3 días | 0–90 |
+| Juli (Cobranza preventiva) | Aviso temprano | `diasAviso` | 7 días | 0–180 |
+| Juli (Cobranza preventiva) | Monto mínimo | `montoRelevante` | 0 | 0–1.000.000.000 |
+| Kai (Riesgo de abandono) | Frecuencia habitual | `frecuenciaDefault` | 60 días | 1–365 |
+| Kai (Riesgo de abandono) | En riesgo | `enRiesgo` | 1 x | 0.5–20 |
+| Kai (Riesgo de abandono) | Abandono probable | `probable` | 1.5 x | 0.5–20 |
+| Kai (Riesgo de abandono) | Dado por perdido | `perdido` | 3 x | 0.5–50 |
+| Kai (Riesgo de abandono) | Historia mínima | `minCompras` | 2 pagos | 1–50 |
+| Valen (Guardia) | Sin atender: pánico / intrusión | `sinAtenderFatalMin` | 5 min | 1–1440 |
+| Valen (Guardia) | Sin atender: error | `sinAtenderErrorMin` | 30 min | 1–1440 |
+| Valen (Guardia) | Sin atender: aviso | `sinAtenderWarningMin` | 240 min | 1–10080 |
+| Valen (Guardia) | En atención: pánico / intrusión | `atencionLentaFatalMin` | 30 min | 1–10080 |
+| Valen (Guardia) | En atención: error | `atencionLentaErrorMin` | 120 min | 1–10080 |
+| Valen (Guardia) | En atención: aviso | `atencionLentaWarningMin` | 1440 min | 1–43200 |
+
+Cómo funciona:
+- Cada campo explica qué hace. El **●** marca un valor propio y debajo dice cuál es el de fábrica.
+- **Guardar** se habilita solo si hay cambios válidos. Un valor fuera de rango, decimal donde se pide entero o vacío se marca en rojo y no se envía.
+  El servidor vuelve a validar todo y rechaza con un mensaje claro.
+- **Restaurar valores** borra tus cambios y el agente vuelve a su valor de fábrica.
+- Lo que cambiás aplica **desde la próxima corrida** (botón "Correr equipo" o el programador de avisos). Las recomendaciones que ya están en la bandeja no se recalculan.
+- Los escalones se mantienen ordenados solos: si ponés "mora avanzada" menor que "mora media", el agente usa la media. Lo mismo con "aviso
+  temprano" y "vence pronto", y con los tres umbrales de abandono.
+- **"De fábrica" depende de la línea.** En Seguridad, la Agenda parte de 15 y 30 días (`SEGURIDAD_URGENTE_DIAS` / `SEGURIDAD_AVISO_DIAS`), no de 2 y 7.
+  Solo se guarda lo que difiere de ese valor, así que si más adelante cambiás esas variables del `.env`, los ajustes que no tocaste las siguen.
+- Apagar o prender un agente **no** pierde sus ajustes ni su nombre.
+
+### Desde la línea de comandos (opcional)
+```bash
+# Foto: el cuerpo es la imagen cruda
+curl -X PUT http://127.0.0.1:3100/api/agents/cobros/foto -H 'content-type: image/png' --data-binary @cobi.png
+curl -X DELETE http://127.0.0.1:3100/api/agents/cobros/foto
+# Ajustes: "config" con solo lo que cambia; {} los restaura
+curl -X PUT http://127.0.0.1:3100/api/agents -H 'content-type: application/json' \
+  -d '{"agentId":"cobros","encendido":true,"autonomia":"manual","config":{"diasCritico":45}}'
+# Para la línea Seguridad, agregá:  -H 'x-tenant-id: guaynet-seguridad'
+```
+
+### Ojo: no hay login
+Mientras la app no tenga login ([sección 10](#10-seguridad-de-acceso-la-app-no-tiene-login)), **cualquiera que llegue al puerto puede cambiar fotos, nombres y
+ajustes**. Lo que la app ya limita: tipo y tamaño de archivo, rutas estrictas (no se puede escribir fuera de la carpeta de fotos) y rangos de cada ajuste.
+
+---
+
 ## 10. Seguridad de acceso (la app no tiene login)
 
 **Hoy la app no tiene autenticación.** Cualquiera que llegue al puerto ve la consola, la bandeja (con nombres de clientes) y puede
@@ -562,6 +635,7 @@ tu red. Sin HTTPS, la contraseña viaja sin cifrar por la red local.
 ### Siempre
 - **No expongas la app a internet** (ni por port-forwarding del router) mientras no tenga un login real. El camino previsto es
   Clerk (ver `apps/web/README.md`, "Pasar a PRODUCCIÓN").
+- Las fotos y los ajustes también se pueden cambiar sin login: es una razón más para no exponer la app (ver arriba).
 - Tus repos de GitHub son **públicos**: nunca subas `.env`, `.agentcore/`, ni respaldos `.sql`. `apps/web/.gitignore` ya excluye
   `.env` y `.agentcore/`.
 
@@ -588,6 +662,7 @@ Todas van en `apps/web/.env`. Después de cambiar cualquiera: `sudo systemctl re
 | `STORE_ARCHIVO` | `.agentcore/store.json` | Dónde se guardan agentes, alias, bandeja, memoria y gasto de IA. Relativa al directorio de trabajo. |
 | `STORE_PERSISTENTE` | `on` | `off`, `0`, `false` o `no` = todo en memoria (se pierde al reiniciar). |
 | `ESTADO_ARCHIVO` | `.agentcore/estado-avisos.json` | Dónde se guarda qué avisos ya se mandaron. |
+| `FOTOS_DIR` | `.agentcore/fotos` | Carpeta de las fotos de los agentes (una subcarpeta por línea). |
 
 ### Telegram y avisos
 | Variable | Default | Qué hace |
@@ -661,12 +736,14 @@ Carpeta `apps/web/.agentcore/` (relativa al `WorkingDirectory` del servicio). Lo
 |---|---|---|
 | `store.json` | agentes encendidos, alias, autonomía, bandeja con su historial, memoria de rechazos, gasto de IA | `600` |
 | `estado-avisos.json` | qué avisos ya se mandaron (evita repetirlos al reiniciar) | `600` |
+| `fotos/<línea>/<agente>.png\|jpg\|webp` | las fotos de los agentes | `600` |
 
 **Tienen datos de clientes: nunca los subas a GitHub ni los copies a lugares abiertos.**
 
 ### Cómo se guarda
 - Escritura atómica (archivo temporal + renombrado) y agrupada (~0,5 s): un corte de luz no deja un JSON a medias, y se pierden como
-  mucho los últimos instantes de cambios.
+  mucho los últimos instantes de cambios. Si el proceso termina con normalidad (`systemctl stop` o `restart`, Ctrl-C), lo pendiente se
+  vuelca al salir y no se pierde nada.
 - Al arrancar, las recomendaciones **terminales** (ejecutadas, rechazadas, vencidas…) de más de 90 días se descartan; las vivas no.
 - Si el archivo está dañado o es de otro formato, la app **arranca vacía y avisa** en el log; no se cae.
 - Es para **una sola instancia** de la app.
@@ -765,6 +842,12 @@ journalctl -u agent-core -n 30 --no-pager
 | `Error: listen EADDRINUSE :::3100` | Otro proceso usa el puerto. | `ss -ltnp \| grep 3100`; cerrá ese proceso o cambiá el puerto. |
 | Funciona a mano pero no como servicio | `PATH` de Node (nvm) o `WorkingDirectory` mal. | Revisá la unidad ([sección 5.2](#52-crear-la-unidad-de-systemd)) y `journalctl`. |
 | Al reiniciar se pierden los agentes | `STORE_PERSISTENTE=off`, o el servicio corre desde otro directorio y guarda en otra carpeta. | Revisá el log `[store]` y el `WorkingDirectory`. |
+| "La foto pesa … el máximo es 512 KB" (o `413`) | La imagen es demasiado grande. | Achicala (p.ej. 256×256) y volvé a subirla. |
+| "La foto tiene que ser PNG, JPG o WebP" (o `415`) | Es un SVG, GIF u otro formato, o el archivo no es realmente una imagen. | Convertila a PNG o JPG. Se verifica el contenido, no la extensión. |
+| La foto no cambia después de subirla | Caché del navegador. | Recargá con Ctrl+F5. La app ya revalida, pero un proxy intermedio puede retenerla. |
+| La foto desapareció tras actualizar | La carpeta de fotos cambió (otro `WorkingDirectory` o `FOTOS_DIR`). | Buscala con `find ~ -type d -name fotos -path '*agentcore*'` y revisá la configuración. |
+| Un ajuste se rechaza con `"…" no puede ser menor/mayor que …` | Valor fuera del rango del agente. | Usá un valor dentro del rango (tabla de la sección "Personalizar los agentes"). |
+| Cambié un ajuste y no se nota | Aplica desde la próxima corrida y no recalcula lo que ya está en la bandeja. | Tocá **Correr equipo**. Si no cambia, es que ese umbral no afecta a tus datos actuales. |
 | La home sigue diciendo datos de ejemplo | `WISP_DATABASE_URL` vacía o no se reinició. | Revisá el `.env` y reiniciá. |
 | `/api/run` responde `502` ("falló la lectura de los datos") | La base no responde o la clave del rol es incorrecta. | Mirá el log. Probá el rol ([6.2](#62-verificar-el-rol-opcional-pero-recomendado)) y que el contenedor `db` esté arriba (`docker compose ps`). Hoy, si la base falla, falla **toda** la corrida. |
 | `permission denied for table …` en el log | Faltó correr uno de los scripts SQL, o guaynet tiene tablas nuevas. | Corré de nuevo los dos `.sql` (son idempotentes salvo `CREATE ROLE`). |
@@ -837,10 +920,11 @@ instalación existente obliga a migrar el volumen de Postgres.
 - **Seguridad no se factura en guaynet todavía:** no hay agentes de cobro en esa línea. Cuando empiece a facturarse hay que sumar ese adapter.
 - **Riesgo de abandono** usa un umbral genérico; puede generar ruido hasta calibrarlo con tus datos.
 - **Equipos caídos** dependen de que guaynet actualice `status` / `last_seen`; con estado `unknown` no hay incidentes.
-- **Un corte brusco** puede perder los últimos ~0,5 s de cambios de configuración.
+- **Un corte de luz o un `kill -9`** pueden perder los últimos ~0,5 s de cambios de configuración. Apagar o reiniciar el servicio con normalidad (`systemctl stop/restart`) no pierde nada: al salir se vuelca lo pendiente.
 - **El chat con un modelo chico** (1,5 B) sirve para explicar hallazgos, no para analizar cifras ni mercado.
 - **Probado** con una base Postgres 16 con el esquema real de guaynet (43 migraciones), con servidores simulados de Telegram y de IA, y con la app real en modo demo. **No** se probó contra tu base real ni con tu bot real de Telegram: son los primeros pasos de verificación en tu servidor.
-- La API acepta configurar un `agentId` que no existe en el catálogo (se guarda pero no hace nada).
+- **Ajustes solo en 6 agentes** (Cobros, Cobranza preventiva, Morosidad, Riesgo de abandono, Guardia y Agenda). Los demás tienen umbrales fijos en el código.
+- **Las fotos no se redimensionan** en el servidor: se muestran recortadas en círculo, así que conviene subirlas ya cuadradas y livianas.
 
 ---
 
@@ -864,6 +948,7 @@ Marcá cada punto en tu servidor:
 **Funcionamiento**
 - [ ] Encendiste agentes, corriste el equipo y hay hallazgos en `/bandeja`
 - [ ] Reiniciaste el servicio y los agentes y la bandeja siguen ahí
+- [ ] (Opcional) le pusiste nombre y foto a un agente y cambiaste un ajuste; tras reiniciar siguen ahí
 - [ ] (Chat) `ollama` responde y el chat de un agente contesta
 - [ ] (Telegram) el mensaje de prueba llegó, **en cada línea**
 - [ ] `SCHEDULER=on`, Gael encendido en cada línea, y el log dice `programador activo`
