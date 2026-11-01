@@ -28,8 +28,8 @@ export const manifestAgenda: AgentManifest = {
   configSchema: {
     type: "object",
     properties: {
-      diasProximo: { type: "integer", minimum: 0, maximum: 365, default: 2, description: "Días de anticipación para marcar IMPORTANTE." },
-      diasAviso: { type: "integer", minimum: 0, maximum: 365, default: 7, description: "Días de anticipación para el aviso temprano (oportunidad)." },
+      diasProximo: { type: "integer", title: "Vence pronto", minimum: 0, maximum: 365, default: 2, description: "Días de anticipación para marcar IMPORTANTE.", "x-unidad": "días" },
+      diasAviso: { type: "integer", title: "Aviso temprano", minimum: 0, maximum: 365, default: 7, description: "Días de anticipación para el aviso temprano (oportunidad). Si es menor que \"vence pronto\", se usa ese.", "x-unidad": "días" },
     },
   },
 };

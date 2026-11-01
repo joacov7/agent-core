@@ -7,6 +7,7 @@ import {
   type AiGateway, type CapacidadesApp, type RunSeleccionResult,
 } from "@agent-core/core";
 import { catalogo, personaDe } from "@agent-core/agents";
+import { ajustesDe, validarConfig, type AjustesVista } from "./ajustes";
 
 /**
  * Capa de servicio del SaaS, agnóstica del framework (no sabe de Next ni de HTTP):
@@ -24,6 +25,8 @@ export interface ServicioDeps {
    * agente lee solo sus claves, p.ej. `{ diasProximo, diasAviso }` del agente de Agenda.
    */
   config?: Record<string, unknown>;
+  /** Fotos de los agentes de un tenant: `agentId → URL`. Sin esto, todos usan el avatar generado. */
+  fotosDe?: (ctx: TenantCtx) => Record<string, string>;
 }
 
 /** Una recomendación con el nombre de a quién se refiere (si se pudo resolver). */
@@ -56,6 +59,8 @@ export interface PersonaVista {
   saludo: string;
   /** `true` si el tenant lo renombró. */
   personalizado: boolean;
+  /** URL de la foto que el tenant le puso (si no hay, se muestra el avatar generado). */
+  fotoUrl?: string;
 }
 
 /** Vista de un agente para la consola: su manifest + si está disponible y su config. */
@@ -70,6 +75,8 @@ export interface AgenteVista {
   encendido: boolean;
   autonomia: AutonomyMode;
   plan?: string;
+  /** Ajustes que el tenant puede cambiar (solo los agentes que declaran un `configSchema`). */
+  ajustes?: AjustesVista;
 }
 
 export interface Servicio {
@@ -153,7 +160,7 @@ export function promptDeAgente(v: AgenteVista, recos: Recomendacion[]): string {
 }
 
 export function crearServicio(deps: ServicioDeps): Servicio {
-  const { store, providers, modeloNegocio, ai, config } = deps;
+  const { store, providers, modeloNegocio, ai, config, fotosDe } = deps;
   let cola: Promise<void> = Promise.resolve();
   const correrUna = (ctx: TenantCtx) =>
     runSeleccion({
@@ -215,6 +222,7 @@ export function crearServicio(deps: ServicioDeps): Servicio {
       const activables = new Set(manifestsActivables(catalogo, app).map((a) => a.manifest.id));
       const configs = store.agentConfig ? await store.agentConfig.list(ctx) : [];
       const porId = new Map(configs.map((c) => [c.agentId, c]));
+      const fotos = fotosDe?.(ctx) ?? {};
       const { items } = await store.recommendations.list(ctx);
       const abiertas = new Map<string, { total: number; aprobacion: number }>();
       for (const r of items) {
@@ -248,6 +256,7 @@ export function crearServicio(deps: ServicioDeps): Servicio {
             rol: a.manifest.nombre,
             saludo: defecto.saludo,
             personalizado: Boolean(alias),
+            ...(fotos[id] ? { fotoUrl: fotos[id] } : {}),
           },
           estado,
           novedades: ab?.total ?? 0,
@@ -256,18 +265,33 @@ export function crearServicio(deps: ServicioDeps): Servicio {
           autonomia: cfg?.autonomia ?? a.manifest.autonomiaMaxima,
         };
         if (cfg?.plan !== undefined) vista.plan = cfg.plan;
+        const ajustes = ajustesDe(a.manifest.configSchema, cfg?.config, config);
+        if (ajustes) vista.ajustes = ajustes;
         return vista;
       });
     },
 
     async setAgente(ctx, cfg) {
       if (!store.agentConfig) throw new Error("El CoreStore no persiste agentConfig.");
-      const { alias: aliasIn, ...resto } = cfg;
-      // El alias es opcional en el input: si no viene, se conserva el que ya tenía el
-      // agente (así la consola puede prender/apagar sin pisar el nombre). `""` lo borra.
-      const alias = (aliasIn !== undefined ? aliasIn : (await store.agentConfig.get(ctx, cfg.agentId))?.alias)?.trim();
+      const agente = catalogo.find((a) => a.manifest.id === cfg?.agentId);
+      if (!agente) throw new ErrorDeValidacion(`Agente desconocido: ${String(cfg?.agentId)}`);
+      const { alias: aliasIn, config: configIn, ...resto } = cfg;
+      const previo = await store.agentConfig.get(ctx, cfg.agentId);
+      // El alias y los ajustes son opcionales en el input: si no vienen, se conservan los que ya tenía el
+      // agente (así la consola puede prender/apagar sin pisarlos). `""` borra el alias y `{}` los ajustes.
+      const alias = (aliasIn !== undefined ? aliasIn : previo?.alias)?.trim();
       if (alias && alias.length > MAX_ALIAS) throw new ErrorDeValidacion(`El nombre no puede superar ${MAX_ALIAS} caracteres.`);
-      return store.agentConfig.set(ctx, alias ? { ...resto, alias } : resto);
+      let ajustes = previo?.config;
+      if (configIn !== undefined) {
+        const v = validarConfig(agente.manifest.configSchema, configIn, agente.manifest.nombre);
+        if (!v.ok) throw new ErrorDeValidacion(v.error);
+        ajustes = v.valor;
+      }
+      return store.agentConfig.set(ctx, {
+        ...resto,
+        ...(alias ? { alias } : {}),
+        ...(ajustes && Object.keys(ajustes).length > 0 ? { config: ajustes } : {}),
+      });
     },
 
     async correr(ctx) {

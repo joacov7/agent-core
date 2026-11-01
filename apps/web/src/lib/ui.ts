@@ -29,4 +29,4 @@ export const CAT_COLOR: Record<string, string> = {
 };
 
 /** Forma mínima que las pantallas necesitan de un agente (lo que devuelve GET /api/agents). */
-export interface PersonaVista { nombre: string; rol: string; saludo: string; personalizado: boolean }
+export interface PersonaVista { nombre: string; rol: string; saludo: string; personalizado: boolean; fotoUrl?: string }

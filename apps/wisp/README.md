@@ -97,8 +97,8 @@ Para renovar un contrato es poco aviso, así que la línea Seguridad lo amplía 
   baja, *oportunidad*). Si ves demasiado ruido, es un umbral a calibrar con tus datos: avisame.
 - **Equipos caídos** dependen de que guaynet actualice `status`/`last_seen` de sus equipos; si
   están en `unknown`, no hay incidentes.
-- La configuración de los agentes y las recomendaciones se guardan **en memoria**: se pierden al
-  reiniciar la app web. Persistirlas es el siguiente paso.
+- La configuración de los agentes y las recomendaciones se guardan en `.agentcore/store.json` de la app web y sobreviven a los reinicios
+  (ver el README de la app). Es para una sola instancia.
 - Si la base no responde durante una corrida, **toda** la corrida falla (el motor no aísla por
   agente todavía) y `/api/run` responde 502 sin filtrar detalles.
 

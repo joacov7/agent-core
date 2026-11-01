@@ -73,7 +73,7 @@ export default function ChatAgentePage() {
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "28px 20px 24px", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <a href="/" style={{ color: C.faint, fontSize: 13 }}>← Equipo</a>
       <header style={{ display: "flex", gap: 12, alignItems: "center", margin: "12px 0 16px" }}>
-        <Avatar nombre={agente.persona.nombre} categoria={agente.manifest.categoria} size={48} estadoColor={est.color} />
+        <Avatar nombre={agente.persona.nombre} categoria={agente.manifest.categoria} size={48} estadoColor={est.color} {...(agente.persona.fotoUrl ? { fotoUrl: agente.persona.fotoUrl } : {})} />
         <div>
           <h1 style={{ margin: 0, fontSize: 22 }}>{agente.persona.nombre} <span style={{ color: C.faint, fontWeight: 400, fontSize: 15 }}>· {agente.persona.rol}</span></h1>
           <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11.5, color: est.color }}>

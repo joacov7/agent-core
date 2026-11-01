@@ -52,7 +52,7 @@ export default async function Home() {
                   border: `1px solid ${a.encendido ? C.accent : C.line}`, borderRadius: 12, padding: "12px 14px",
                   background: a.disponible ? C.surface : "#121819", opacity: a.disponible ? 1 : 0.5,
                 }}>
-                  <Avatar nombre={a.persona.nombre} categoria={cat} size={42} estadoColor={est.color} />
+                  <Avatar nombre={a.persona.nombre} categoria={cat} size={42} estadoColor={est.color} {...(a.persona.fotoUrl ? { fotoUrl: a.persona.fotoUrl } : {})} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>
                       {a.persona.nombre} <span style={{ fontWeight: 400, color: C.faint, fontSize: 13 }}>· {a.persona.rol}</span>

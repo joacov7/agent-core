@@ -108,6 +108,9 @@ apps/
 - ✅ **Asistente personal proactivo** (`asistente`, "Gael"): por Telegram manda el resumen de la mañana y
   avisa lo urgente (una vez, con silencio nocturno y tope diario). Solo avisa, no actúa. El motor ahora
   **deduplica** las recomendaciones vivas (antes cada corrida las duplicaba).
+- ✅ **Personalizar agentes** (`/consola`): nombre, **foto** (PNG/JPG/WebP, validada por contenido) y **ajustes** de umbrales por agente
+  (Cobros, Morosidad, Cobranza preventiva, Riesgo de abandono, Guardia, Agenda), con formulario generado desde el `configSchema`, validación en
+  cliente y servidor, y "de fábrica" por línea. Persiste y sobrevive a reinicios (también a un `systemctl restart`).
 - ✅ **Dos líneas de negocio, dos tenants** (internet y seguridad de guaynet): cada una con su adapter de solo lectura, su
   equipo de agentes, su bandeja y sus avisos por Telegram (a su propio chat). La Guardia vigila que lo grave no quede sin atender.
 - ✅ Activación por manifest en el core (`esActivable`/`manifestsActivables`):
@@ -117,7 +120,7 @@ apps/
   mock de IA) y un **smoke test end-to-end** del bucle completo. `npm run build`
   y luego `node apps/ejemplo/dist/demo.js` corre el catálogo y loguea las recos.
 
-**465 tests verdes** (451 sin DB + 14 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
+**528 tests verdes** (514 sin DB + 14 de integración contra Postgres real) (vitest): paridad de los `.logic` + engine (activación,
 selección por tenant, enforcement, ejecución, memoria, impacto) + AI gateway
 (presupuesto/atribución) + adapter de persistencia Prisma + proveedor de IA OpenAI-compatible + capa de servicio del SaaS (incl. chat)
 + los 30 agentes del catálogo + smoke end-to-end de **tres** adapters (retail, jurídico

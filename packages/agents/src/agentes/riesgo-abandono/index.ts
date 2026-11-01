@@ -2,7 +2,8 @@ import type {
   Agent, AgentContext, AgentManifest, AgentRunOutput, RecomendacionNueva,
 } from "@agent-core/contracts";
 import { calcularPrioridad, confianzaPorOrigen } from "@agent-core/core";
-import { evaluarChurn } from "./churn.logic.js";
+import { schemaDeCampos } from "../../ajustes.js";
+import { AJUSTES_CHURN, evaluarChurn, umbralesChurnDeConfig } from "./churn.logic.js";
 
 export * from "./churn.logic.js";
 
@@ -26,16 +27,18 @@ export const manifestRiesgoAbandono: AgentManifest = {
   toolsDeEscritura: [],
   riesgo: "bajo",
   autonomiaMaxima: "manual",
+  configSchema: schemaDeCampos(AJUSTES_CHURN),
 };
 
 export const agenteRiesgoAbandono: Agent = {
   manifest: manifestRiesgoAbandono,
-  async run({ ctx, providers }: AgentContext): Promise<AgentRunOutput> {
+  async run({ ctx, providers, config }: AgentContext): Promise<AgentRunOutput> {
     const tx = providers.transactions;
     if (!tx?.resumenPorContacto) {
       return { recomendaciones: [], resumen: "El adaptador no expone resumenPorContacto (transactions)." };
     }
 
+    const umbrales = umbralesChurnDeConfig(config);
     const { items } = await tx.resumenPorContacto(ctx);
     const confianza = confianzaPorOrigen("calculo");
     const recomendaciones: RecomendacionNueva[] = [];
@@ -43,7 +46,7 @@ export const agenteRiesgoAbandono: Agent = {
     for (const r of items) {
       const alerta = evaluarChurn({
         compras: r.compras, diasDesdeUltima: r.diasDesdeUltima, frecuenciaDias: r.frecuenciaDias ?? null,
-      });
+      }, umbrales);
       if (!alerta) continue;
 
       recomendaciones.push({

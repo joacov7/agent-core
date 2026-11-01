@@ -1,5 +1,6 @@
 // @agent-core/agents — catálogo de agentes reutilizables.
 export * from "./catalogo.js";
+export * from "./ajustes.js";
 export * from "./agentes/tareas.js";
 export * from "./agentes/whatsapp/index.js";
 export * from "./agentes/crm/index.js";

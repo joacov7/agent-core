@@ -32,7 +32,7 @@ npm run dev          # http://localhost:3000
   generado por área, nombre propio, saludo) con su estado en vivo: *descansando*, *al día*,
   *con novedades* o *espera tu OK*.
 - **Consola** (`/consola`): página cliente que consume la API — encendés/apagás agentes,
-  les ponés **otro nombre** (✎), ajustás autonomía y plan (persisten vía `PUT /api/agents`) y corrés el equipo
+  les ponés **otro nombre** (✎) y una **foto** (📷), ajustás autonomía, plan y los **ajustes** de cada agente (⚙, ver "Personalizar los agentes"; todo persiste vía `PUT /api/agents`) y corrés el equipo
   (`POST /api/run`). Es la versión "conectada" de la consola visual (same-origin, sin la
   limitación de CSP del artifact).
 - **Bandeja** (`/bandeja`): las recomendaciones que generan los agentes (firmadas por su autor), por prioridad,
@@ -45,6 +45,10 @@ npm run dev          # http://localhost:3000
   - `GET  /api/agents` → agentes con disponibilidad + config del tenant.
   - `PUT  /api/agents` → encender/apagar/ajustar un agente (`AgenteConfigInput`); `alias` lo
     renombra (≤40 caracteres → si no, `400`). Sin `alias` en el body se conserva el actual; `""` lo borra.
+    `config` guarda sus ajustes (se validan contra el `configSchema` del agente: clave desconocida, tipo o rango inválido → `400`);
+    sin `config` se conservan los actuales y `{}` los restaura. Un `agentId` que no está en el catálogo → `400`.
+  - `GET/PUT/DELETE /api/agents/<id>/foto` → la foto del agente en la línea activa. `PUT` recibe la imagen cruda (PNG, JPG o WebP,
+    hasta 512 KB; `415` si no es una de esas, `413` si pesa más); `GET` la sirve con `nosniff` y CSP vacía; `404` si no hay.
   - `POST /api/run` → corre los agentes **encendidos** y devuelve lo ejecutado.
   - `GET  /api/recommendations` → bandeja del tenant, ordenada por prioridad.
   - `GET /api/asistente` → estado de los avisos (sin token ni chat ids) · `POST /api/asistente/prueba` → mensaje de prueba por Telegram.
@@ -77,11 +81,27 @@ Cada línea lleva su estado de avisos (un resumen por mañana y por línea) y pu
 (`TELEGRAM_CHAT_IDS_SEGURIDAD`, p.ej. el equipo de guardia). Los mensajes llevan la línea en el encabezado ("· 🛡️ Seguridad").
 El **nombre del cliente** de cada hallazgo aparece en la bandeja de la app, pero **no** en Telegram (salvo `AVISOS_NOMBRES=on`).
 
+## Personalizar los agentes
+Desde `/consola`, por línea (Internet y Seguridad son independientes):
+- **Nombre** (✎, hasta 40 caracteres) y **foto** (📷 / ✕). La foto es PNG, JPG o WebP de hasta 512 KB, se muestra en círculo en toda la app
+  y se guarda en `.agentcore/fotos/<línea>/` (`FOTOS_DIR`). Se valida por el **contenido** del archivo (SVG y GIF no entran), se corta la
+  lectura al pasar el tope y tenant/agente tienen un formato estricto (no hay forma de escribir fuera de esa carpeta).
+- **Ajustes (⚙)** de los agentes que declaran un `configSchema`: Cobros, Cobranza preventiva, Morosidad, Riesgo de abandono, Guardia y Agenda.
+  La consola dibuja el formulario desde el schema (título, unidad, rango), muestra qué valor es propio y cuál el de fábrica, valida en el
+  navegador y el servidor vuelve a validar. **Restaurar** borra lo propio.
+- "De fábrica" es el valor de la **línea** (p.ej. la Agenda de Seguridad parte de 15/30 días por `SEGURIDAD_URGENTE_DIAS`/`SEGURIDAD_AVISO_DIAS`) y,
+  si la línea no define uno, el del agente. Solo se guarda lo que difiere, y los ajustes propios se combinan con los de la línea clave por clave.
+- Para que otro agente sea configurable alcanza con declarar sus campos en `AJUSTES_*` (ver `packages/agents/src/ajustes.ts`): el mismo
+  objeto genera el `configSchema` del manifest y la lectura segura de la config al correr (inválido o fuera de rango → default).
+
+Sin login todavía: quien llegue al puerto puede cambiar fotos y ajustes (ver "Ojo" más abajo y la guía de instalación).
+
 ## Persistencia
 Lo que configurás y lo que los agentes encuentran **sobrevive a los reinicios**: qué agentes están encendidos (y su alias y
 autonomía), la bandeja con su historial, la memoria de rechazos y el gasto de IA (el tope de presupuesto no se "resetea").
 Se guarda en `.agentcore/store.json` (`STORE_ARCHIVO` para cambiarlo) con permisos 600 —la bandeja tiene datos de clientes—,
-de forma atómica y junta las ráfagas de cambios (~0,5 s). Un corte brusco pierde, como mucho, esos últimos instantes.
+de forma atómica y junta las ráfagas de cambios (~0,5 s). Si el proceso termina con normalidad (`systemctl restart`, Ctrl-C) lo pendiente se
+vuelca al salir; solo un `kill -9` o un corte de luz pierden esos últimos instantes.
 - Las recomendaciones **terminales** (ejecutadas, rechazadas, vencidas…) de más de 90 días se descartan al arrancar; las vivas no.
 - Si el archivo está dañado o es de otro formato, la app **arranca vacía y avisa** en el log, sin tumbarse.
 - Es para **una sola instancia** de la app. Con varias instancias o volumen real, usá `@agent-core/store-prisma` (Postgres).

@@ -159,7 +159,7 @@ export interface RunSeleccionInput {
   modeloNegocio?: BusinessModel;
   /** Qué hacer con un agente disponible sin config guardada (default "apagado"). */
   pordefecto?: PorDefecto;
-  /** Config base para agentes sin ajustes propios en su config guardada. */
+  /** Config base de la línea: cada agente la combina con sus ajustes guardados (los suyos pisan, clave por clave). */
   config?: Record<string, unknown>;
   deps?: RunAgentDeps;
 }
@@ -202,7 +202,7 @@ export async function runSeleccion(input: RunSeleccionInput): Promise<RunSelecci
       ctx: input.ctx,
       providers: input.providers,
       store: input.store,
-      config: s.config ?? input.config ?? {},
+      config: { ...(input.config ?? {}), ...(s.config ?? {}) }, // la propia pisa a la base de la línea, clave por clave
       ...(input.modeloNegocio ? { modeloNegocio: input.modeloNegocio } : {}),
       ...(input.deps ? { deps: input.deps } : {}),
     });
