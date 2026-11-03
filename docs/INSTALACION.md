@@ -24,7 +24,7 @@ acceso, backups, actualización y resolución de problemas.
 8. [Fase 5 — IA local gratis (Ollama)](#8-fase-5--ia-local-gratis-ollama)
 9. [Fase 6 — Avisos por Telegram (Gael)](#9-fase-6--avisos-por-telegram-gael)
    - [Personalizar los agentes: nombre, foto y ajustes](#personalizar-los-agentes-nombre-foto-y-ajustes)
-10. [Seguridad de acceso (la app no tiene login)](#10-seguridad-de-acceso-la-app-no-tiene-login)
+10. [Acceso y seguridad](#10-acceso-y-seguridad)
 11. [Referencia de variables de entorno](#11-referencia-de-variables-de-entorno)
 12. [Archivos que se generan, backups y restauración](#12-archivos-que-se-generan-backups-y-restauración)
 13. [Actualizar a una versión nueva](#13-actualizar-a-una-versión-nueva)
@@ -67,7 +67,7 @@ acceso, backups, actualización y resolución de problemas.
 ### Puertos que se usan
 | Puerto | Qué | Quién puede llegar |
 |---|---|---|
-| **3100** | agent-core (web + API) | tu red local (ver [sección 10](#10-seguridad-de-acceso-la-app-no-tiene-login)) |
+| **3100** | agent-core (web + API) | tu red local (ver [sección 10](#10-acceso-y-seguridad)) |
 | 3000 | otros sistemas tuyos | (no lo toca agent-core) |
 | 5432 | Postgres de guaynet | solo el propio servidor (`127.0.0.1`) en el `docker-compose.yml` de guaynet |
 | 8000 | backend de guaynet | solo el propio servidor (`127.0.0.1`) en ese compose |
@@ -109,8 +109,8 @@ Hacelo en este orden. **No avances de fase hasta que pase la verificación de la
 | 5 | IA local (Ollama) | bajo (consume RAM) | el chat responde |
 | 6 | Telegram + Gael | medio (manda mensajes) | llega el mensaje de prueba |
 
-Antes de la fase 3 resolvé la [sección 10](#10-seguridad-de-acceso-la-app-no-tiene-login): con datos reales de clientes, la
-app **no debe** quedar abierta a cualquiera de tu red sin pensarlo.
+La app **pide usuario y clave** y no sirve nada sin ellos (ver [sección 10](#10-acceso-y-seguridad)). Antes de la fase 3, además, decidí si le sumás
+una capa de red (túnel SSH o HTTPS): con datos reales de clientes, la clave por HTTP en tu red local viaja sin cifrar.
 
 ---
 
@@ -144,7 +144,19 @@ cp .env.example .env
 chmod 600 .env
 echo "AI_PROVIDER=off" >> .env      # apaga el chat hasta que instales un modelo (fase 5)
 ```
-Con solo eso la app corre en **modo demo** (datos de ejemplo de un comercio, sin base de datos).
+Con eso la app corre en **modo demo** (datos de ejemplo de un comercio, sin base de datos).
+
+**Falta la clave de acceso.** La app no muestra nada sin una: en su lugar da una página "🔒 Falta configurar el acceso". Generala:
+```bash
+cd ~/agent-core/apps/web
+npm run auth:hash
+```
+Te pide una clave **dos veces** (no se ve mientras la escribís; mínimo 10 caracteres, mejor una frase larga) y imprime una línea
+`AUTH_CLAVE_HASH=scrypt:…`. Pegala en `apps/web/.env`. Opcional: `AUTH_USUARIO=joaquin` (por defecto el usuario es `admin`) y `AUTH_HORAS=12`.
+- Lo que va al `.env` es un **hash** (no se puede revertir a la clave), pero igual dejalo con `chmod 600`.
+- **Evitá poner la clave en claro** (`AUTH_CLAVE=`): el cargador de `.env` de Next interpreta el signo `$` como una variable y recorta la clave en silencio.
+  El hash está hecho para no tener `$`.
+- Apagar el acceso (`AUTH=off`) existe solo para demos locales sin datos reales: deja la app abierta a cualquiera que llegue al puerto.
 
 ### 4.3 Compilar y arrancar
 ```bash
@@ -180,6 +192,8 @@ Test-NetConnection 10.0.0.39 -Port 3100
 Tiene que decir `TcpTestSucceeded : True`. Después abrí `http://10.0.0.39:3100` (con `http`, no `https`).
 
 ### 4.5 Qué verificar en la demo
+0. **Ingreso:** al abrir cualquier dirección te lleva a `/login`. Entrá con tu usuario y clave: tenés que aterrizar en la página que pediste.
+   Con una clave equivocada tiene que decir "Usuario o clave incorrectos". Arriba a la derecha aparece **Salir**.
 1. **`/`** (Equipo): los agentes con nombre propio y su estado.
 2. **`/consola`**: encendé 2 o 3 agentes (por ejemplo Cobros y Morosidad), ajustá la autonomía, ponéles otro nombre (✎) y tocá
    **Correr equipo**.
@@ -241,7 +255,8 @@ Tiene que verse `active (running)` y la línea `[store] persistente…`.
 
 ### 5.4 Verificar
 ```bash
-curl -sI http://127.0.0.1:3100 | head -3          # HTTP/1.1 200 OK
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3100/login   # 200 (la pantalla de ingreso)
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3100/        # 307 → /login (sin sesión no se ve nada)
 sudo reboot                                        # (en un momento oportuno)
 # después del reinicio:
 systemctl is-active agent-core                     # active
@@ -253,7 +268,7 @@ Los agentes que encendiste en la demo tienen que seguir encendidos tras el reini
 ## 6. Fase 3 — Conectar los datos reales de guaynet
 
 ### 6.0 Antes de empezar
-1. **Decidí el acceso** (sección 10): con datos reales, que no entre cualquiera de tu red.
+1. **Revisá el acceso** (sección 10): ya pide usuario y clave. Con datos reales, decidí además si lo cifrás con un túnel SSH u HTTPS (la clave por HTTP viaja sin cifrar por tu red).
 2. **Hacé un respaldo de la base de guaynet** (siempre, aunque esto solo lee):
    ```bash
    cd ~/guaynet
@@ -469,8 +484,9 @@ llevan la línea en el encabezado ("· 🛡️ Seguridad").
 Reiniciá (`sudo systemctl restart agent-core`) y en la home tocá **"Enviar mensaje de prueba"**. Por línea de comandos
 **(no probado en tu servidor)**:
 ```bash
-curl -s -X POST http://127.0.0.1:3100/api/asistente/prueba                                        # línea por defecto
-curl -s -X POST http://127.0.0.1:3100/api/asistente/prueba -H 'x-tenant-id: guaynet-seguridad'    # línea Seguridad
+# (con la sesión iniciada: ver la receta de la sección 14)
+curl -s -b ~/.sesion-agentcore -X POST http://127.0.0.1:3100/api/asistente/prueba                                        # línea por defecto
+curl -s -b ~/.sesion-agentcore -X POST http://127.0.0.1:3100/api/asistente/prueba -H 'x-tenant-id: guaynet-seguridad'    # línea Seguridad
 ```
 Límite: una prueba cada 30 segundos por línea.
 
@@ -493,7 +509,7 @@ En el log tiene que aparecer:
 ```
 Si en cambio dice `SCHEDULER=on pero falta TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_IDS: no se enviará nada.`, falta alguno de los dos.
 
-Estado de los avisos (sin token ni chat ids): `curl -s http://127.0.0.1:3100/api/asistente`.
+Estado de los avisos (sin token ni chat ids): `curl -s -b ~/.sesion-agentcore http://127.0.0.1:3100/api/asistente` (con la sesión iniciada, [sección 14](#14-operación-diaria)).
 
 ### 9.5 Qué manda y cuándo
 | | |
@@ -573,33 +589,65 @@ Cómo funciona:
 ### Desde la línea de comandos (opcional)
 ```bash
 # Foto: el cuerpo es la imagen cruda
-curl -X PUT http://127.0.0.1:3100/api/agents/cobros/foto -H 'content-type: image/png' --data-binary @cobi.png
-curl -X DELETE http://127.0.0.1:3100/api/agents/cobros/foto
+curl -b ~/.sesion-agentcore -X PUT http://127.0.0.1:3100/api/agents/cobros/foto -H 'content-type: image/png' --data-binary @cobi.png
+curl -b ~/.sesion-agentcore -X DELETE http://127.0.0.1:3100/api/agents/cobros/foto
 # Ajustes: "config" con solo lo que cambia; {} los restaura
-curl -X PUT http://127.0.0.1:3100/api/agents -H 'content-type: application/json' \
+curl -b ~/.sesion-agentcore -X PUT http://127.0.0.1:3100/api/agents -H 'content-type: application/json' \
   -d '{"agentId":"cobros","encendido":true,"autonomia":"manual","config":{"diasCritico":45}}'
 # Para la línea Seguridad, agregá:  -H 'x-tenant-id: guaynet-seguridad'
 ```
 
-### Ojo: no hay login
-Mientras la app no tenga login ([sección 10](#10-seguridad-de-acceso-la-app-no-tiene-login)), **cualquiera que llegue al puerto puede cambiar fotos, nombres y
-ajustes**. Lo que la app ya limita: tipo y tamaño de archivo, rutas estrictas (no se puede escribir fuera de la carpeta de fotos) y rangos de cada ajuste.
+### Acceso
+Todo esto requiere haber iniciado sesión (ver [sección 10](#10-acceso-y-seguridad)); los `curl` de arriba necesitan la cookie de sesión (receta en la
+[sección 14](#14-operación-diaria)). Además la app limita tipo y tamaño de archivo, usa rutas estrictas (no se puede escribir fuera de la carpeta de fotos) y
+valida el rango de cada ajuste.
 
 ---
 
-## 10. Seguridad de acceso (la app no tiene login)
+## 10. Acceso y seguridad
 
-**Hoy la app no tiene autenticación.** Cualquiera que llegue al puerto ve la consola, la bandeja (con nombres de clientes) y puede
-encender o apagar agentes y mandar mensajes de prueba por Telegram. Con datos de demo no importa; **con datos reales sí**.
+La app **pide usuario y clave**. Es un único usuario (el dueño del negocio), definido en el `.env`: todavía no hay usuarios múltiples ni
+roles (ese es el camino a Clerk, ver `apps/web/README.md`).
 
-Elegí **una** de estas opciones antes de la fase 3:
+### Cómo funciona
+- **Nada se sirve sin sesión**: ni las páginas ni ninguna ruta de la API (agentes, bandeja, chat, fotos, ajustes, pruebas de Telegram…). Las páginas
+  llevan a `/login`; la API responde `401`. Cada ruta de la API vuelve a verificar la sesión por su cuenta (segunda barrera), y un test impide que
+  se agregue una ruta sin esa verificación.
+- **Falla cerrado.** Si falta la clave o está mal armada, la app **no sirve nada** y explica qué falta (página "🔒 Falta configurar el acceso",
+  `503` en la API, y una línea `[auth] SIN CONFIGURAR…` en el log). Solo `AUTH=off` la deja abierta, y lo avisa en el log al arrancar.
+- **Sesión:** una cookie firmada, `HttpOnly` (el JavaScript de la página no la ve) y `SameSite=Strict` (el navegador no la manda en pedidos que
+  vienen de otro sitio, que es lo que frena el CSRF). Dura 12 horas (`AUTH_HORAS`). Sobrevive a un reinicio del servicio.
+- **La clave** se guarda como hash scrypt con sal (`AUTH_CLAVE_HASH`): quien lea el `.env` no obtiene la clave. No se registra en ningún log.
+- **Freno a los intentos:** 10 fallas en 10 minutos bloquean los ingresos (`429`) hasta que venza la más vieja; durante el bloqueo ni la clave correcta
+  entra. Es global y no por IP, porque sin un proxy de confianza la IP se puede falsear. Costo: un atacante insistente puede dejarte afuera unos minutos,
+  pero no puede probar claves más rápido que eso. Las sesiones ya abiertas siguen funcionando.
+- Los **avisos de Telegram** no se ven afectados: el programador corre dentro del servidor y no pasa por la API.
+- Cabeceras de seguridad: `X-Frame-Options: DENY` (no se puede meter en un iframe ajeno), `nosniff`, y las páginas van con `no-store` (tras "Salir",
+  el botón Atrás no muestra datos de clientes).
+
+### Configurar, cambiar y recuperar la clave
+```bash
+cd ~/agent-core/apps/web
+npm run auth:hash          # pide la clave dos veces y imprime AUTH_CLAVE_HASH=…
+```
+1. Pegá la línea en `apps/web/.env` (reemplazando la anterior, si había).
+2. `sudo systemctl restart agent-core`.
+- **Cambiar la clave cierra todas las sesiones abiertas** (la firma de las sesiones deriva de la clave). Cambiar `AUTH_USUARIO` también.
+- **Si te olvidás la clave:** no se puede recuperar (es un hash), pero tampoco hace falta: corré `npm run auth:hash`, poné la línea nueva en el `.env` y reiniciá.
+  Quien tiene acceso al servidor tiene acceso al `.env`: por eso importan los permisos (`chmod 600`) y quién tiene cuenta en el Ubuntu.
+- **Cerrar sesión** (botón *Salir*) borra la cookie del navegador, pero las sesiones son **sin estado**: una cookie robada seguiría valiendo hasta que venza o
+  hasta que cambies la clave. Si sospechás que alguien la tiene, cambiá la clave.
+
+### Lo que el login NO resuelve: el cable
+Por HTTP, en tu red local, el usuario y la clave **viajan sin cifrar**: quien pueda escuchar el tráfico de esa red (otra PC comprometida, un switch con
+espejo de puertos, WiFi compartido) puede verlos. Para una red chica y de confianza puede ser aceptable; si no, sumá una capa:
 
 ### Opción A — Solo tu red local con firewall (lo mínimo)
-Es lo que ya configuraste en la fase 1: `ufw allow from 10.0.0.0/24 to any port 3100`. Cualquiera conectado a tu red local ve la
-consola. Aceptable solo si esa red es de confianza (no hay WiFi de invitados ni clientes en el mismo segmento).
+Es lo que configuraste en la fase 1: `ufw allow from 10.0.0.0/24 to any port 3100`. Cualquiera conectado a tu red local **llega** a la pantalla de ingreso
+(y puede intentar claves, con el freno de arriba). Aceptable solo si esa red es de confianza (no hay WiFi de invitados ni clientes en el mismo segmento).
 
 ### Opción B — Solo el propio servidor + túnel SSH (recomendada)
-La app escucha únicamente en `127.0.0.1` y vos entrás por un túnel cifrado:
+La app escucha únicamente en `127.0.0.1` y vos entrás por un túnel **cifrado**: ni la clave ni los datos viajan en claro.
 1. En la unidad de systemd, `ExecStart=… next start -p 3100 -H 127.0.0.1`, y recargá.
 2. Cerrá el puerto en el firewall: `sudo ufw delete allow from 10.0.0.0/24 to any port 3100 proto tcp` (o borrá esa regla desde
    `sudo ufw status numbered`).
@@ -611,31 +659,31 @@ La app escucha únicamente en `127.0.0.1` y vos entrás por un túnel cifrado:
 - `PUBLIC_URL` (el link a la bandeja en los mensajes de Telegram) apuntaría a una dirección que el celular no puede abrir. Poné
   igual la IP del servidor si estás en la red local, sabiendo que solo abre con el túnel.
 
-### Opción C — Proxy con usuario y contraseña delante **(no probado)**
-nginx con autenticación básica, y la app escuchando solo en loopback (`-H 127.0.0.1`). Ejemplo estándar:
+### Opción C — HTTPS delante con nginx **(no probado)**
+Cifra el tráfico sin túnel. Con la app escuchando solo en loopback (`-H 127.0.0.1`) y un certificado propio:
 ```bash
-sudo apt install nginx apache2-utils
-sudo htpasswd -c /etc/nginx/agentcore.htpasswd joaquin
+sudo apt install nginx
+sudo openssl req -x509 -nodes -newkey rsa:2048 -days 825 -keyout /etc/ssl/private/agentcore.key -out /etc/ssl/certs/agentcore.crt -subj "/CN=10.0.0.39"
 ```
 `/etc/nginx/sites-available/agentcore`:
 ```nginx
 server {
-    listen 3200;
+    listen 3443 ssl;
+    ssl_certificate     /etc/ssl/certs/agentcore.crt;
+    ssl_certificate_key /etc/ssl/private/agentcore.key;
     location / {
-        auth_basic "agent-core";
-        auth_basic_user_file /etc/nginx/agentcore.htpasswd;
         proxy_pass http://127.0.0.1:3100;
         proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;   # así la cookie de sesión sale con el atributo Secure
     }
 }
 ```
-Habilitalo (`sudo ln -s … /etc/nginx/sites-enabled/ && sudo nginx -t && sudo systemctl reload nginx`) y abrí el 3200 en `ufw` solo para
-tu red. Sin HTTPS, la contraseña viaja sin cifrar por la red local.
+Habilitalo (`sudo ln -s … /etc/nginx/sites-enabled/ && sudo nginx -t && sudo systemctl reload nginx`) y abrí el 3443 en `ufw` solo para tu red. El navegador va a
+avisar que el certificado no es de una autoridad conocida (es el tuyo): aceptalo una vez, o importá el `.crt` como de confianza.
 
 ### Siempre
-- **No expongas la app a internet** (ni por port-forwarding del router) mientras no tenga un login real. El camino previsto es
-  Clerk (ver `apps/web/README.md`, "Pasar a PRODUCCIÓN").
-- Las fotos y los ajustes también se pueden cambiar sin login: es una razón más para no exponer la app (ver arriba).
+- **No expongas la app a internet** (ni por port-forwarding del router) con este login único: no hay doble factor ni recuperación de cuentas. Si algún día hace
+  falta acceso desde afuera, el camino previsto es Clerk (ver `apps/web/README.md`, "Pasar a PRODUCCIÓN") o una VPN.
 - Tus repos de GitHub son **públicos**: nunca subas `.env`, `.agentcore/`, ni respaldos `.sql`. `apps/web/.gitignore` ya excluye
   `.env` y `.agentcore/`.
 
@@ -655,6 +703,15 @@ Todas van en `apps/web/.env`. Después de cambiar cualquiera: `sudo systemctl re
 | `SEGURIDAD_TENANT` | `guaynet-seguridad` | Tenant de Seguridad. Tiene que ser distinto del de Internet o la app no arranca. |
 | `SEGURIDAD_AVISO_DIAS` | `30` | Días de anticipación para avisar vencimientos en Seguridad (entero 0–365). |
 | `SEGURIDAD_URGENTE_DIAS` | `15` | Días desde los que el aviso es "importante" (entero 0–365). El aviso nunca es menor que este. |
+
+### Acceso (login)
+| Variable | Default | Qué hace |
+|---|---|---|
+| `AUTH_CLAVE_HASH` | — | Hash de la clave, generado con `npm run auth:hash`. **Obligatoria** (o `AUTH_CLAVE`): sin clave la app no sirve nada. |
+| `AUTH_USUARIO` | `admin` | Nombre de usuario. Cambiarlo cierra las sesiones abiertas. |
+| `AUTH_HORAS` | `12` | Duración de la sesión (entero 1–336). |
+| `AUTH_CLAVE` | — | Clave en claro (mínimo 10 caracteres). **Desaconsejada**: un `$` en el `.env` la recorta en silencio. Si hay hash, manda el hash. |
+| `AUTH` | (activo) | `off`, `0`, `false` o `no` apaga el login. **Solo para demos locales**: deja la app abierta. |
 
 ### Persistencia
 | Variable | Default | Qué hace |
@@ -703,6 +760,10 @@ WISP_TENANT=guaynet
 SEGURIDAD=on
 SEGURIDAD_AVISO_DIAS=30
 SEGURIDAD_URGENTE_DIAS=15
+
+# Acceso (obligatorio): pegá acá la línea que imprime `npm run auth:hash`
+AUTH_CLAVE_HASH=scrypt:…
+AUTH_USUARIO=joaquin
 
 # Persistencia (los valores por defecto ya alcanzan; se listan para que sepas dónde está)
 STORE_PERSISTENTE=on
@@ -783,6 +844,9 @@ Si además querés que Gael vuelva a mandar el resumen de hoy, borrá también `
 
 ## 13. Actualizar a una versión nueva
 
+> **Si venís de una versión sin login:** la versión nueva **exige una clave** y, hasta que la configures, la app responde "🔒 Falta configurar el acceso" a todo.
+> Conviene dejarla lista **antes** de reiniciar: `cd ~/agent-core/apps/web && npm run auth:hash`, pegá la línea en el `.env`, y recién después seguí con lo de abajo.
+
 ```bash
 cd ~/agent-core
 git pull origin main
@@ -811,9 +875,19 @@ journalctl -u agent-core -n 30 --no-pager
 | Reiniciar | `sudo systemctl restart agent-core` |
 | Detener / iniciar | `sudo systemctl stop agent-core` / `start` |
 | Ver quién usa el puerto | `ss -ltnp \| grep 3100` |
-| Ver el estado de los avisos | `curl -s http://127.0.0.1:3100/api/asistente` |
-| Ver las líneas | `curl -s http://127.0.0.1:3100/api/lineas` |
-| Ver los agentes (JSON) | `curl -s http://127.0.0.1:3100/api/agents` |
+| Ver si la app pide clave (sin sesión) | `curl -s http://127.0.0.1:3100/api/auth/estado` |
+| Ver el estado de los avisos | `curl -s -b ~/.sesion-agentcore http://127.0.0.1:3100/api/asistente` |
+| Ver las líneas | `curl -s -b ~/.sesion-agentcore http://127.0.0.1:3100/api/lineas` |
+| Ver los agentes (JSON) | `curl -s -b ~/.sesion-agentcore http://127.0.0.1:3100/api/agents` |
+
+**Para usar la API con `curl` hay que iniciar sesión primero** (sin sesión responde `401`). Guarda la cookie en un archivo que solo vos podés leer:
+```bash
+read -rsp "Clave: " CLAVE; echo                        # no se ve ni queda en el historial
+curl -s -c ~/.sesion-agentcore -X POST http://127.0.0.1:3100/api/auth/login \
+  -H 'content-type: application/json' -d "{\"usuario\":\"joaquin\",\"clave\":\"$CLAVE\"}"; unset CLAVE
+chmod 600 ~/.sesion-agentcore
+```
+Después usá `-b ~/.sesion-agentcore` en cada `curl`. La sesión dura lo que diga `AUTH_HORAS` (12 h por defecto). Si dice "Demasiados intentos fallidos", esperá los minutos que indica.
 
 ### Mensajes del log y qué significan
 | Mensaje | Significado |
@@ -822,6 +896,11 @@ journalctl -u agent-core -n 30 --no-pager
 | `[store] STORE_PERSISTENTE=off: …` | Está en modo memoria: se pierde todo al reiniciar. |
 | `[store] … está dañado (JSON inválido): arranco vacío.` | El archivo estaba roto. Restaurá un backup. |
 | `[store] no pude guardar …` | No puede escribir (permisos o disco lleno). Se reintenta con el próximo cambio. |
+| `[auth] acceso protegido (usuario "…", sesión 12 h).` | El login está activo. |
+| `[auth] SIN CONFIGURAR, no se sirve nada…: <motivo>` | Falta o está mal la clave: la app responde `503` a todo. Arreglá el `.env` y reiniciá. |
+| `[auth] AUTH=off: la app NO pide clave…` | Alguien dejó el acceso apagado. Solo para demos. |
+| `[auth] … AUTH_CLAVE está en claro…` | Funciona, pero conviene pasar a `AUTH_CLAVE_HASH` (`npm run auth:hash`). |
+| `[auth] intento de ingreso fallido` | Alguien probó una clave incorrecta (no se registra cuál). Muchos seguidos = alguien está adivinando. |
 | `[avisos] programador activo · …` | Los avisos están funcionando. |
 | `[avisos] SCHEDULER=on pero falta TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_IDS…` | Falta el token o los chats. |
 | `[avisos] <VARIABLE> inválida …: uso <default>` | Un valor del `.env` está mal; usa el default. |
@@ -839,6 +918,13 @@ journalctl -u agent-core -n 30 --no-pager
 | `next build` falla con módulos `@agent-core/*` no encontrados | Faltó compilar los paquetes. | En la raíz: `npm run build`, y repetí. |
 | No carga desde tu PC pero `curl 127.0.0.1:3100` funciona | Firewall. | [Sección 4.4](#44-abrir-el-puerto-en-el-firewall-solo-para-tu-red). `Test-NetConnection` debe dar `True`. |
 | `curl` da `Connection refused` | La app no está corriendo. | `systemctl status agent-core` y `journalctl -u agent-core -n 50`. |
+| Toda la app responde "🔒 Falta configurar el acceso" (o `503`) | Falta la clave, o `AUTH_CLAVE_HASH` está mal pegada. El motivo exacto sale en la página y en el log (`[auth] SIN CONFIGURAR…`). | `cd ~/agent-core/apps/web && npm run auth:hash`, pegá la línea en el `.env` **entera y en una sola línea**, y reiniciá. |
+| "Usuario o clave incorrectos" con la clave que creías correcta | Usuario distinto (por defecto es `admin`, o el de `AUTH_USUARIO`), mayúsculas, o la clave del `.env` no es la que pensás. | Probá el usuario exacto. Si dudás, generá un hash nuevo (`npm run auth:hash`) y reiniciá. |
+| "Demasiados intentos fallidos. Probá de nuevo en N min." (`429`) | Hubo 10 ingresos fallidos en 10 minutos (vos o alguien más). | Esperá. Reiniciar el servicio también limpia el contador. Si no fuiste vos, mirá el log: `grep "intento de ingreso fallido"`. |
+| Entro, pero al recargar me pide clave de nuevo | La cookie no se guarda: por HTTPS sin `X-Forwarded-Proto` correcto, o el navegador bloquea cookies. | Entrá por la misma dirección siempre. Con nginx, revisá `proxy_set_header X-Forwarded-Proto https`. |
+| Me pide clave de nuevo todos los días | La sesión dura 12 h. | Subí `AUTH_HORAS` (máximo 336 = 14 días). |
+| Después de actualizar, la app quedó con "Falta configurar el acceso" | Esta versión **exige** la clave y tu `.env` todavía no la tiene. | `npm run auth:hash` y reiniciá (sección 13). |
+| `curl` a la API da `401` | No hay sesión en ese `curl`. | Receta de la [sección 14](#14-operación-diaria). |
 | `Error: listen EADDRINUSE :::3100` | Otro proceso usa el puerto. | `ss -ltnp \| grep 3100`; cerrá ese proceso o cambiá el puerto. |
 | Funciona a mano pero no como servicio | `PATH` de Node (nvm) o `WorkingDirectory` mal. | Revisá la unidad ([sección 5.2](#52-crear-la-unidad-de-systemd)) y `journalctl`. |
 | Al reiniciar se pierden los agentes | `STORE_PERSISTENTE=off`, o el servicio corre desde otro directorio y guarda en otra carpeta. | Revisá el log `[store]` y el `WorkingDirectory`. |
@@ -912,7 +998,10 @@ instalación existente obliga a migrar el volumen de Postgres.
 
 ## 17. Limitaciones conocidas
 
-- **No tiene login.** Ver [sección 10](#10-seguridad-de-acceso-la-app-no-tiene-login).
+- **Login de un solo usuario**, sin roles, sin doble factor y sin recuperación por mail (la clave se regenera con `npm run auth:hash` en el servidor).
+- **Por HTTP, la clave viaja sin cifrar por tu red local.** Para cifrarla: túnel SSH u HTTPS (sección 10).
+- **Las sesiones no se pueden revocar una por una:** "Salir" borra la cookie del navegador, pero una cookie robada vale hasta que venza o hasta que cambies la clave.
+- **El freno de intentos es global** (no por IP): alguien que insista puede bloquear los ingresos unos minutos (las sesiones abiertas siguen).
 - **Una sola instancia** de la app (el store es un archivo). Para varias instancias o más volumen: `@agent-core/store-prisma` (Postgres).
 - **Si la base de guaynet falla durante una corrida, falla toda la corrida** (el motor todavía no aísla por agente); `/api/run` responde `502`.
 - **Solo lectura:** los agentes recomiendan, no ejecutan acciones sobre guaynet.
@@ -934,7 +1023,8 @@ Marcá cada punto en tu servidor:
 
 **Instalación**
 - [ ] `git log --oneline -3` muestra la versión esperada y `npm run build` terminó sin errores
-- [ ] `apps/web/.env` existe, con permisos `600` (y `.agentcore/` con `700`)
+- [ ] `apps/web/.env` existe, con permisos `600` (y `.agentcore/` con `700`), y tiene `AUTH_CLAVE_HASH`
+- [ ] Sin sesión, la app te lleva a `/login`; con tu clave entrás; con una equivocada, no
 - [ ] `next build` terminó sin errores
 - [ ] El servicio `agent-core` está `active` y arranca solo tras reiniciar el servidor
 - [ ] Desde tu PC: `Test-NetConnection 10.0.0.39 -Port 3100` da `True` (o entrás por túnel SSH)
@@ -954,7 +1044,7 @@ Marcá cada punto en tu servidor:
 - [ ] `SCHEDULER=on`, Gael encendido en cada línea, y el log dice `programador activo`
 
 **Seguridad y operación**
-- [ ] Elegiste una opción de acceso (A, B o C) y la app **no** está expuesta a internet
+- [ ] Elegiste una capa de red (A, B o C) y la app **no** está expuesta a internet
 - [ ] `.env`, `.agentcore/` y los respaldos `.sql` están fuera de git
 - [ ] Backup diario de `.agentcore/` y de la base de guaynet, y probaste restaurar uno
 - [ ] Revisaste el `.env` de guaynet (sección 16) antes de actualizarlo

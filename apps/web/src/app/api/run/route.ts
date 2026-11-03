@@ -1,3 +1,4 @@
+import { exigirSesion } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { resolveTenant } from "@/lib/tenant";
 import { servicioDe } from "@/lib/app";
@@ -6,6 +7,8 @@ export const dynamic = "force-dynamic";
 
 /** POST /api/run → corre los agentes encendidos del tenant y devuelve lo ejecutado. */
 export async function POST(req: Request) {
+  const sinSesion = await exigirSesion(req);
+  if (sinSesion) return sinSesion;
   const ctx = resolveTenant(req);
   let res;
   try {
