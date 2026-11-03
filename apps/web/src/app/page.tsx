@@ -1,4 +1,7 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { authRuntime } from "@/lib/auth";
+import { COOKIE_SESION, sesionValida } from "@/lib/auth-sesion";
 import { servicioDe, FUENTE } from "@/lib/app";
 import { LINEAS } from "@/lib/lineas";
 import { tenantDeCookie } from "@/lib/tenant";
@@ -11,7 +14,10 @@ export const dynamic = "force-dynamic";
 // Server component: la vista de equipo. Muestra quién está en el equipo del tenant, qué
 // está haciendo cada agente ahora y cuántas novedades tiene.
 export default async function Home() {
-  const ctx = tenantDeCookie((await cookies()).get("linea")?.value); // la línea que eligió el selector
+  const jar = await cookies();
+  // Segunda barrera (la primera es el middleware): esta página lee datos directo del servicio, sin pasar por la API.
+  if (!(await sesionValida(authRuntime().cfg, jar.get(COOKIE_SESION)?.value, Date.now()))) redirect("/login");
+  const ctx = tenantDeCookie(jar.get("linea")?.value); // la línea que eligió el selector
   const linea = LINEAS.find((l) => l.tenantId === ctx.tenantId)!;
   const agentes = await servicioDe(ctx.tenantId).listarAgentes(ctx);
   const disponibles = agentes.filter((a) => a.disponible);

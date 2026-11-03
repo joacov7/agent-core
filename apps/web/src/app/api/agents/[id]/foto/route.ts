@@ -1,3 +1,4 @@
+import { exigirSesion } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { catalogo } from "@agent-core/agents";
 import { resolveTenant } from "@/lib/tenant";
@@ -16,6 +17,8 @@ const existe = (id: string) => catalogo.some((a) => a.manifest.id === id);
 
 /** GET → la imagen (404 si el agente no tiene). Lleva `nosniff` y una CSP vacía: aunque el archivo no fuera una imagen real, el navegador no la ejecuta. */
 export async function GET(req: Request, { params }: Ctx) {
+  const sinSesion = await exigirSesion(req);
+  if (sinSesion) return sinSesion;
   const { id } = await params;
   if (!existe(id)) return error("Agente desconocido.", 404);
   const ctx = resolveTenant(req);
@@ -34,6 +37,8 @@ export async function GET(req: Request, { params }: Ctx) {
 
 /** PUT (el cuerpo es la imagen cruda) → guarda o reemplaza la foto. Devuelve la URL nueva. */
 export async function PUT(req: Request, { params }: Ctx) {
+  const sinSesion = await exigirSesion(req);
+  if (sinSesion) return sinSesion;
   const { id } = await params;
   if (!existe(id)) return error("Agente desconocido.", 404);
   const ctx = resolveTenant(req);
@@ -50,6 +55,8 @@ export async function PUT(req: Request, { params }: Ctx) {
 
 /** DELETE → vuelve al avatar generado. */
 export async function DELETE(req: Request, { params }: Ctx) {
+  const sinSesion = await exigirSesion(req);
+  if (sinSesion) return sinSesion;
   const { id } = await params;
   if (!existe(id)) return error("Agente desconocido.", 404);
   const ctx = resolveTenant(req);

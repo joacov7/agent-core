@@ -12,6 +12,7 @@ interface LineaVista { id: string; nombre: string; icono: string }
 export function SelectorLinea() {
   const [d, setD] = useState<{ lineas: LineaVista[]; actual: string } | null>(null);
   useEffect(() => {
+    if (window.location.pathname === "/login") return; // todavía sin sesión: no hay nada que pedirle a la API
     void fetch("/api/lineas").then((r) => (r.ok ? r.json() : null)).then(setD).catch(() => setD(null));
   }, []);
   if (!d || d.lineas.length < 2) return null;

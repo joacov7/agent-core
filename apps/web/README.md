@@ -81,6 +81,27 @@ Cada línea lleva su estado de avisos (un resumen por mañana y por línea) y pu
 (`TELEGRAM_CHAT_IDS_SEGURIDAD`, p.ej. el equipo de guardia). Los mensajes llevan la línea en el encabezado ("· 🛡️ Seguridad").
 El **nombre del cliente** de cada hallazgo aparece en la bandeja de la app, pero **no** en Telegram (salvo `AVISOS_NOMBRES=on`).
 
+## Acceso (login)
+La app **pide usuario y clave** y no sirve nada sin ellos: ni páginas ni ninguna ruta de la API (las páginas llevan a `/login`, la API responde `401`).
+Un solo usuario, definido en el `.env`; sin usuarios múltiples ni roles todavía (ese es el camino a Clerk, más abajo).
+
+```bash
+cd apps/web && npm run auth:hash     # pide la clave dos veces (no se ve) e imprime AUTH_CLAVE_HASH=…
+```
+Pegá esa línea en el `.env` y reiniciá. Variables: `AUTH_CLAVE_HASH`, `AUTH_USUARIO` (default `admin`), `AUTH_HORAS` (default 12). Sin clave la app **falla cerrada**:
+no sirve nada y muestra qué falta; solo `AUTH=off` (para demos locales) la deja abierta.
+
+- **Clave:** hash scrypt con sal, con `:` como separador y no `$`, porque Next expande los `$` de los `.env` y recortaría el hash (hay un test de regresión con el cargador real de Next). No se registra en ningún log.
+- **Sesión:** cookie firmada con HMAC-SHA256, `HttpOnly`, `SameSite=Strict` (frena el CSRF; no hace falta un token aparte), `Secure` solo si la conexión es HTTPS. La clave de firma deriva de la clave de acceso:
+  no hay otro secreto que configurar, sobrevive a los reinicios y **cambiar la clave (o el usuario) cierra todas las sesiones**. Son sin estado: *Salir* borra la cookie del navegador, pero una cookie robada valdría hasta vencer.
+- **Dos barreras:** el middleware (`src/middleware.ts`, runtime Edge, solo Web Crypto) y cada ruta de la API (`exigirSesion`), más la página principal que lee datos directo. Un test recorre `app/api` y falla si alguna función exportada no lo llama primero.
+- **Freno:** 10 fallas en 10 minutos bloquean los ingresos (`429`, `Retry-After`); global y no por IP (sin proxy de confianza la IP se falsea). Durante el bloqueo no se verifica ni la clave correcta.
+- Ingreso: usuario y clave se verifican siempre los dos (sin cortocircuito), mismo mensaje si falla cualquiera, `Origin` ajeno → 403, destino `?next=` solo a rutas internas (sin redirección abierta).
+- Cabeceras: `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, y `Cache-Control: no-store` en las páginas.
+- Los avisos de Telegram no pasan por la API (el programador corre dentro del servidor): no les afecta.
+- **Por HTTP la clave viaja sin cifrar por la red local**: para cifrarla, túnel SSH o HTTPS (guía de instalación, sección 10).
+- `GET /api/auth/estado` (público) dice si la app pide clave y si este navegador tiene sesión; `POST /api/auth/login` y `/logout`.
+
 ## Personalizar los agentes
 Desde `/consola`, por línea (Internet y Seguridad son independientes):
 - **Nombre** (✎, hasta 40 caracteres) y **foto** (📷 / ✕). La foto es PNG, JPG o WebP de hasta 512 KB, se muestra en círculo en toda la app
@@ -94,7 +115,7 @@ Desde `/consola`, por línea (Internet y Seguridad son independientes):
 - Para que otro agente sea configurable alcanza con declarar sus campos en `AJUSTES_*` (ver `packages/agents/src/ajustes.ts`): el mismo
   objeto genera el `configSchema` del manifest y la lectura segura de la config al correr (inválido o fuera de rango → default).
 
-Sin login todavía: quien llegue al puerto puede cambiar fotos y ajustes (ver "Ojo" más abajo y la guía de instalación).
+Todo esto requiere haber iniciado sesión (ver "Acceso" más abajo).
 
 ## Persistencia
 Lo que configurás y lo que los agentes encuentran **sobrevive a los reinicios**: qué agentes están encendidos (y su alias y
@@ -136,8 +157,7 @@ sistema. Es el interruptor de los avisos: **apagado, no escribe nada**.
 - El estado (qué se avisó) se guarda en `.agentcore/estado-avisos.json` (permisos 600): **reiniciar no reenvía** el resumen de hoy ni repite alertas.
 - Una sola revisión a la vez, y el motor **deduplica**: correr el equipo muchas veces no duplica la bandeja ni los avisos.
 
-**Ojo:** `GET /api/asistente` y `POST /api/asistente/prueba` no tienen login todavía (como el resto de la app): mantené la
-app en `127.0.0.1` o dentro de tu red. La prueba está limitada a una cada 30 s. Un solo programador atiende **todas las líneas**,
+**Ojo:** esos endpoints exigen sesión como el resto de la app. La prueba está limitada a una cada 30 s. Un solo programador atiende **todas las líneas**,
 cada una con su servicio, su estado persistido y su canal.
 
 ## IA del chat

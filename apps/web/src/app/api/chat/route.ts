@@ -1,3 +1,4 @@
+import { exigirSesion } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { resolveTenant } from "@/lib/tenant";
 import { servicioDe } from "@/lib/app";
@@ -10,6 +11,8 @@ const error = (mensaje: string, status: number, causa?: string) =>
 
 /** POST /api/chat → { agentId, messages: [{role:"user"|"assistant", content}] } → { respuesta, modelo, uso }. */
 export async function POST(req: Request) {
+  const sinSesion = await exigirSesion(req);
+  if (sinSesion) return sinSesion;
   const ctx = resolveTenant(req);
   let body: { agentId?: unknown; messages?: unknown };
   try {
